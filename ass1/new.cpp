@@ -13,17 +13,17 @@ public:
 	double x;
 	double y;
 	double z;
-	nVec();
-	nVec(double _x,double _y, double _z);
+	// nVec();
+	nVec(double _x = 0,double _y = 0, double _z = 0);
 	double dotProd(nVec v2);
 	nVec crossProd(nVec v2);
 };
 
-nVec::nVec(){
-	x=0;
-	y=0;
-	z=0;
-}
+// nVec::nVec(){
+// 	x=0;
+// 	y=0;
+// 	z=0;
+// }
 
 nVec::nVec(double _x, double _y, double _z){
 	x = _x;
@@ -48,8 +48,13 @@ class Ray
 public:
 	nVec r0;
 	nVec rd;
+	Ray();
 	Ray(nVec _r0, nVec _rd);
 };
+
+Ray::Ray(){
+
+}
 
 Ray::Ray(nVec _r0,nVec _rd ){
 	r0 = _r0;
@@ -61,8 +66,11 @@ class Sphere
 public:
 	nVec c;
 	int r;
-	Sphere(nVec _c, int _r);
+	Sphere();
+	Sphere(nVec _c, int _r = 0);
 };
+
+Sphere::Sphere(){}
 
 Sphere::Sphere(nVec _c,int _r ){
 	c = _c;
@@ -74,8 +82,11 @@ class Polygon
 public:
 	int n;
 	vector<nVec> vertices;
+	Polygon();
 	Polygon(int _n, vector<nVec> _vertices);
 };
+
+Polygon::Polygon(){}
 
 Polygon::Polygon(int _n,vector<nVec> _vertices){
 	n = _n;
@@ -88,8 +99,11 @@ public:
 	int b;
 	int center;
 	nVec normal;
+	Screen();
 	Screen(int _l, int _b, int _center, nVec _normal);
-}
+};
+
+Screen::Screen(){}
 
 Screen::Screen(int _l, int _b, int _center, nVec _normal){
 	l = _l;
@@ -98,7 +112,6 @@ Screen::Screen(int _l, int _b, int _center, nVec _normal){
 	normal = _normal;
 }
 
-// int main(){
+int main(){
 
-
-// }
+}
