@@ -76,40 +76,6 @@ nVec nVec::operator-(const nVec& nv) {
 }
 
 
-
-// nVec nVec::sub(nVec v2){
-// 	nVec v3;
-// 	v3.x = x - v2.x;
-// 	v3.y = y - v2.y;
-// 	v3.z = z - v2.z;
-// 	return v3;
-// }
-
-// nVec nVec::add(nVec v2){
-// 	nVec v3;
-// 	v3.x = x + v2.x;
-// 	v3.y = y + v2.y;
-// 	v3.z = z + v2.z;
-// 	return v3;
-// }
-
-// nVec nVec::multiply(double d){
-// 	nVec v3;
-// 	v3.x = x*d;
-// 	v3.y = y*d;
-// 	v3.z = z*d;
-// 	return v3;
-// }
-
-// nVec nVec::divide(double d){
-// 	nVec v3;
-// 	v3.x = x/float(d);
-// 	v3.y = y/float(d);
-// 	v3.z = z/float(d);
-// 	return v3;
-// }
-
-
 double nVec::dotProd(nVec v2){
 	return (x*v2.x + y*v2.y + z*v2.z);
 }
@@ -155,18 +121,26 @@ class Sphere
 public:
 	nVec c;
 	int r;
+	double ka;
+	double kd;
+	double ks;
+	double spec_coeff;
 	Vec3b color;
 	Sphere();
-	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255));
+	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka, double _kd, double _ks, double _spec_coeff);
 	pair <double,double> intersect(Ray R);
 
 };
 
 Sphere::Sphere(){}
 
-Sphere::Sphere(nVec _c,int _r , Vec3b _color ){
+Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks, double _spec_coeff ){
 	c = _c;
 	r = _r;
+	ka = _ka;
+	kd = _kd;
+	ks = _ks;
+	spec_coeff = _spec_coeff;
 	color = _color;
 }
 
@@ -191,8 +165,12 @@ public:
 	int n;
 	vector<nVec> vertices;
 	Vec3b color;
+	double ka;
+	double kd;
+	double ks;
+	double spec_coeff;
 	Polygon();
-	Polygon(int _n, vector<nVec> _vertices, Vec3b);
+	Polygon(int _n, vector<nVec> _vertices, Vec3b, double _ka, double _kd, double _ks, double _spec_coeff);
 	nVec normal();
 	double intersect(Ray);
 
@@ -200,10 +178,14 @@ public:
 
 Polygon::Polygon(){}
 
-Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255)){
+Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka, double _kd, double _ks, double _spec_coeff){
 	n = _n;
 	vertices = _vertices;
 	color = _color;
+	ka = _ka;
+	kd = _kd;
+	ks = _ks;
+	spec_coeff = _spec_coeff;
 }
 
 nVec Polygon::normal(){
@@ -290,22 +272,3 @@ Screen::Screen(int _l, int _b, nVec _center, nVec _normal, nVec _up, nVec _right
 	up = _up;
 	right = _right;
 }
-
-// int main(){
-
-// 	Polygon p;
-// 	p.n=3;
-// 	vector<nVec> nv;
-// 	nv.push_back(nVec(1,0,0));
-// 	nv.push_back(nVec(0,1,0));
-// 	nv.push_back(nVec(0,0,0));
-// 	p.vertices = nv;
-// 	p.normal().print();
-// 	Ray r;
-// 	r.r0 = nVec(0,0,5);
-// 	r.rd = nVec(0.2,0.25,-7);
-// 	cout<<p.intersect(r)<<endl;
-// 	cout<<endl;
-// 	(r.Point(p.intersect(r))).print();
-
-// }
