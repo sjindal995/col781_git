@@ -127,7 +127,7 @@ public:
 	double spec_coeff;
 	Vec3b color;
 	Sphere();
-	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka, double _kd, double _ks, double _spec_coeff);
+	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.4, double _ks = 0.3, double _spec_coeff = 2);
 	pair <double,double> intersect(Ray R);
 
 };
@@ -178,7 +178,7 @@ public:
 
 Polygon::Polygon(){}
 
-Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka, double _kd, double _ks, double _spec_coeff){
+Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.4, double _ks = 0.3, double _spec_coeff = 2){
 	n = _n;
 	vertices = _vertices;
 	color = _color;
@@ -191,7 +191,8 @@ Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255)
 nVec Polygon::normal(){
 	nVec v1 = vertices[1]-vertices[0];
 	nVec v2 = vertices[2]-vertices[1];
-	return (v1.crossProd(v2));
+	nVec v3 = v1.crossProd(v2);
+	return (v3.norm());
 }
 
 double Polygon::intersect(Ray R){
