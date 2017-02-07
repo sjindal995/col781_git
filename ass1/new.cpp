@@ -22,6 +22,7 @@ public:
 	nVec operator-(const nVec& nv2);
 	nVec norm();
 	nVec scale(double d);
+	nVec transform(Mat);
 	void print();
 
 	// nVec sub(nVec v2);
@@ -92,6 +93,14 @@ double nVec::getMag(){
 	return sqrt(x*x + y*y + z*z);
 }
 
+nVec nVec::transform(Mat mat){
+	nVec v;
+	v.x = mat.at<float>(0,0)*x + mat.at<float>(1,0)*y + mat.at<float>(2,0)*z + mat.at<float>(3,0); 
+	v.y = mat.at<float>(0,1)*x + mat.at<float>(1,1)*y + mat.at<float>(2,1)*z + mat.at<float>(3,1); 
+	v.z = mat.at<float>(0,2)*x + mat.at<float>(1,2)*y + mat.at<float>(2,2)*z + mat.at<float>(3,2);
+	return v; 
+}
+
 class Ray
 {
 public:
@@ -126,15 +135,18 @@ public:
 	double ks;
 	double spec_coeff;
 	Vec3b color;
-	Sphere();
-	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2);
+	int affine;
+	Mat m;
+	// Sphere();
+	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2, int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0)));
 	pair <double,double> intersect(Ray R);
+	nVec normal(nVec);
 
 };
 
-Sphere::Sphere(){}
+// Sphere::Sphere(){}
 
-Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks, double _spec_coeff ){
+Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks, double _spec_coeff , int _affine, Mat _m){
 	c = _c;
 	r = _r;
 	ka = _ka;
@@ -142,9 +154,16 @@ Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks
 	ks = _ks;
 	spec_coeff = _spec_coeff;
 	color = _color;
+	affine = _affine;
+	m = _m;
+
 }
 
 pair <double,double> Sphere::intersect(Ray R){
+	if(affine==1){
+		R.r0 = R.r0.transform(m.inv());
+		R.rd = R.rd.transform(m.inv());
+	}
 	double A = 1;
 	double B = 2*(R.rd.x*(R.r0.x-c.x) + R.rd.y*(R.r0.y-c.y) + R.rd.z*(R.r0.z-c.z) );
 	double C = (R.r0.x - c.x)*(R.r0.x - c.x) + (R.r0.y - c.y)*(R.r0.y - c.y) + (R.r0.z - c.z)*(R.r0.z - c.z) - r*r;
@@ -159,6 +178,15 @@ pair <double,double> Sphere::intersect(Ray R){
 	return make_pair(t1,t2);
 }
 
+nVec Sphere::normal(nVec point){
+	nVec n = point - c;
+	if(affine==0) return n.norm();
+	else{
+		n = n.transform(m.inv().t());
+		return n.norm();
+	}
+}
+
 class Polygon
 {
 public:
@@ -169,16 +197,18 @@ public:
 	double kd;
 	double ks;
 	double spec_coeff;
-	Polygon();
-	Polygon(int _n, vector<nVec> _vertices, Vec3b, double _ka, double _kd, double _ks, double _spec_coeff);
+	int affine;
+	Mat m;
+	// Polygon();
+	Polygon(int _n, vector<nVec> _vertices, Vec3b, double _ka, double _kd, double _ks, double _spec_coeff, int,Mat);
 	nVec normal();
 	double intersect(Ray);
 
 };
 
-Polygon::Polygon(){}
+// Polygon::Polygon(){}
 
-Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2){
+Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2,  int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0))){
 	n = _n;
 	vertices = _vertices;
 	color = _color;
@@ -186,16 +216,25 @@ Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255)
 	kd = _kd;
 	ks = _ks;
 	spec_coeff = _spec_coeff;
+	affine = _affine;
+	m =_m;
 }
 
 nVec Polygon::normal(){
 	nVec v1 = vertices[1]-vertices[0];
 	nVec v2 = vertices[2]-vertices[1];
 	nVec v3 = v1.crossProd(v2);
-	return (v3.norm());
+	if(affine==0)	return (v3.norm());
+	else {
+		return v3.transform(m.inv().t()).norm();
+	}
 }
 
 double Polygon::intersect(Ray R){
+	if(affine==1){
+		R.r0 = R.r0.transform(m.inv());
+		R.rd = R.rd.transform(m.inv());
+	}
 	nVec n = normal();
 	if(n.dotProd(R.rd)==0) return -1; //parallel case
 	double D = (-1)*n.dotProd(vertices[0]);
@@ -273,3 +312,22 @@ Screen::Screen(int _l, int _b, nVec _center, nVec _normal, nVec _up, nVec _right
 	up = _up;
 	right = _right;
 }
+
+// int main(){
+// 	// nVec v()
+// 	cout<<0<<endl;
+// 	nVec v(1,2,3);
+// 	Mat matrix(4,4,CV_32FC1);
+// 	int k=0;
+// 	for(int i=0; i<4; i++){
+// 		for(int j=0; j<4; j++){
+// 			if(i==j)
+// 			matrix.at<float>(i,j) = 1;
+// 			else matrix.at<float>(i,j)=0;
+// 		}
+
+// 	}
+// 	matrix.at<float>(1,1) =2; 
+// 	matrix.at<float>(2,2) =3; 
+// 	v.transform(matrix).print();
+// }

@@ -22,14 +22,25 @@ void illuminateModel(nVec camera, Screen s){
 			double t=1000000;
 			bool pol_intersect = false;
 			bool sphere_intersect = false;
-			int int_k = -1;
+			int int_k = -1, aff=0;
+			Mat transm;
 
 			for(int k=0; k<spheres.size(); k++){
+				// if(sphere.affine==0){
 				pair<double,double> int1 = spheres[k].intersect(r);
+				// }
+				// else{
+				// 	pair<double,double> int1 = spheres[k].intersect()
+				// }
 				if(int1.first !=-1){
 					t = min(min(int1.first,int1.second), t);
 					if(t == min(int1.first, int1.second)){
 						// img.at<Vec3b>(i+s.l/2,j+s.b/2) = spheres[k].color;
+						if(spheres[k].affine==1) {
+							aff=1;
+							transm = spheres[k].m;
+						}
+						else aff=0;
 						sphere_intersect = true;
 						int_k = k;
 					}
@@ -42,6 +53,11 @@ void illuminateModel(nVec camera, Screen s){
 					t = min(t,int2);
 					if(t == int2){
 						// img.at<Vec3b>(i+s.l/2,j+s.b/2) = polygons[k].color;
+						if(polygons[k].affine==1) {
+							aff=1;
+							transm = polygons[k].m;
+						}
+						else aff=0;
 						pol_intersect = true;
 						int_k = k;
 					} 
@@ -59,6 +75,9 @@ void illuminateModel(nVec camera, Screen s){
 					nVec l_src = lights_srcs[ll];
 					// l_src.print();
 					nVec pt = r.Point(t);
+					if(aff==1){
+						pt = (r.r0.transform(transm.inv()) + r.rd.transform(transm.inv()).scale(t) ).transform(transm);	
+					}
 					nVec L = l_src - pt;
 					L = L.norm();
 					nVec N;
@@ -67,8 +86,9 @@ void illuminateModel(nVec camera, Screen s){
 						// N.print();
 					}
 					else{
-						N = pt - spheres[int_k].c;
-						N = N.norm();
+						// N = pt - spheres[int_k].c;
+						// N = N.norm();
+						N = spheres[int_k].normal(pt);
 					}
 					nVec R = N.scale(2*L.dotProd(N)) - L;
 					nVec V = camera - pt;
@@ -179,8 +199,9 @@ void generateImage(nVec camera, Screen s){
 	
 }
 
-int main(){
-	ifstream inp("input.txt");
+int main(int argc, char** argv){
+	ifstream inp(argv[1]);
+	// ifstream inp("input.txt");
 	string tag;
 	inp >> tag;
 	double x,y,z;
@@ -217,6 +238,7 @@ int main(){
 		spheres.push_back(sp);
 	}
 
+
 	int n_pol;
 	inp>>tag>>n_pol;
 	for(int i=0;i<n_spheres;i++){
@@ -232,8 +254,18 @@ int main(){
 		double ka,kd,ks,spec_coeff;
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
 		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff);
-		polygons.push_back(p);
+		// polygons.push_back(p);
 	}
+
+	spheres[0].affine=1;
+	Mat mat(4,4, CV_32FC1, float(0));
+	mat.at<float>(0,0)=1;
+	mat.at<float>(1,0)=1;
+	mat.at<float>(1,1)=2;
+	mat.at<float>(2,2)=3;
+	mat.at<float>(3,3)=1;
+	spheres[0].m = mat;
+
 	int n_lights;
 	inp>>tag>>n_lights;
 	for(int i=0;i<n_lights;i++){
@@ -246,4 +278,5 @@ int main(){
 	inp>>tag>>i_a;
 	inp>>tag>>image_length>>image_height;
 	illuminateModel(camera,sc);
+	// Mat matrix(4,4,CV_32FC1)
 }
