@@ -1,20 +1,19 @@
 #include "new.cpp"
-
+#include <fstream>
 vector<Sphere> spheres;
 
 vector<Polygon> polygons;
 
 vector<nVec> lights_srcs;
+vector<double> i_l;
+double i_a;
+int image_length,image_height;
 
-void antiAlias(Mat* img){
-
-}
-
-void illuminateModel(nVec camera, Screen s,  double i_l, double i_a){
+void illuminateModel(nVec camera, Screen s){
 	Mat img(s.l,s.b, CV_8UC3, Vec3b(0,0,0));
 	// nVec l_src;
-	for(int i = -1*s.l/2; i <= s.l/2; i++){
-		for(int j = -1*s.b/2; j <= s.b/2; j++){
+	for(int i = -1*s.l/2; i <= s.l/2; i+= s.l/image_height){
+		for(int j = -1*s.b/2; j <= s.b/2; j+= s.b/image_length){
 			nVec pixel = s.center + (s.up.scale(i)) + (s.
 					right.scale(j));
 			nVec rd = pixel - camera;
@@ -100,11 +99,11 @@ void illuminateModel(nVec camera, Screen s,  double i_l, double i_a){
 					}
 					if(!blocked ){
 						if(pol_intersect){
-							i_total += max(polygons[int_k].kd*i_l*(L.dotProd(N)),0.0) + polygons[int_k].ks*i_l*pow(max(0.0,R.dotProd(V)),polygons[int_k].spec_coeff);
+							i_total += max(polygons[int_k].kd*i_l[ll]*(L.dotProd(N)),0.0) + polygons[int_k].ks*i_l[ll]*pow(max(0.0,R.dotProd(V)),polygons[int_k].spec_coeff);
 							// cout << "1: " << (L.dotProd(N)) << ", 2: " << R.dotProd(V) << endl;
 						}
 						else{
-							i_total += max(spheres[int_k].kd*i_l*(L.dotProd(N)),0.0) + spheres[int_k].ks*i_l*pow(max(0.0,R.dotProd(V)),spheres[int_k].spec_coeff);
+							i_total += max(spheres[int_k].kd*i_l[ll]*(L.dotProd(N)),0.0) + spheres[int_k].ks*i_l[ll]*pow(max(0.0,R.dotProd(V)),spheres[int_k].spec_coeff);
 						}
 					}
 
@@ -112,14 +111,22 @@ void illuminateModel(nVec camera, Screen s,  double i_l, double i_a){
 
 				if(pol_intersect){
 					// cout << img.at<Vec3b>(i+s.l/2,j+s.b/2) <<  " , "  << blocked << ", pixel: " << pixel.x << "," << pixel.y << ","<<pixel.z << endl;
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(polygons[int_k].color[2]*i_total,255.0);	
+					for(int i1 = 0;i1 < s.l/image_height;i1++){
+						for(int j1=0;j1 < s.b/image_length;j1++){
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[2] = min(polygons[int_k].color[2]*i_total,255.0);
+						}
+					}
 				}
 				else{
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
-					img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
+					for(int i1 = 0;i1 < s.l/image_height;i1++){
+						for(int j1=0;j1 < s.b/image_length;j1++){
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
+							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
+						}
+					}
 				}
 				
 			}
@@ -173,39 +180,70 @@ void generateImage(nVec camera, Screen s){
 }
 
 int main(){
-	nVec camera(0,0,-160);
-	nVec normal(0,0,1);
-	nVec up(0,1,0);
-	nVec right(1,0,0);
-	nVec center(0,0,40);
-	nVec center1(0,0,-40);
-	Sphere sp(center, 100, Vec3b(0,0,255));
-	spheres.push_back(sp);
+	ifstream inp("input.txt");
+	string tag;
+	inp >> tag;
+	double x,y,z;
+	inp>>x>>y>>z;
+	nVec camera(x,y,z);
 
-	// p.n=3;
-	vector<nVec> nv;
-	nv.push_back(nVec(-300,-300,150));
-	nv.push_back(nVec(300,-300,150));
-	nv.push_back(nVec(300,300,150));
-	nv.push_back(nVec(-300,300,150));
-	// p.vertices = nv;
-	// p.color = Vec3b(0,255,0);
-	Polygon p(3,nv,Vec3b(200,0,0));
+	inp>>tag>>x>>y>>z;
+	nVec sc_center(x,y,z);
+	inp>>tag>>x>>y>>z;
+	nVec sc_normal(x,y,z);
+	inp>>tag>>x>>y>>z;
+	nVec sc_up(x,y,z);
+	inp>>tag>>x>>y>>z;
+	nVec sc_right(x,y,z);
+	inp>>tag>>x;
+	double sc_length = x;
+	inp>>tag>>x;
+	double sc_height = x;
 
-	polygons.push_back(p);
-	p.normal().print();
+	Screen sc(sc_height,sc_length,sc_center,sc_normal,sc_up,sc_right);
 
+	int n_spheres;
+	inp>>tag>>n_spheres;
+	for(int i=0;i<n_spheres;i++){
+		inp>>tag>>x>>y>>z;
+		nVec sp_center(x,y,z);
+		double sp_radius;
+		inp>>tag>>sp_radius;
+		inp>>tag>>x>>y>>z;
+		Vec3b sp_color = Vec3b(0,0,255);
+		double ka,kd,ks,spec_coeff;
+		inp>>tag>>ka>>kd>>ks>>spec_coeff;
+		Sphere sp(sp_center,sp_radius,sp_color,ka,kd,ks,spec_coeff);
+		spheres.push_back(sp);
+	}
 
-	Screen s(800,800,center1, normal, up, right);
-	// generateImage(camera, s);
-	nVec l_src(300,200,-200);
-	nVec l_src2(-300,0,-200);
-	// nVec l_src(250,0,0);
-	lights_srcs.push_back(l_src);
-	// lights_srcs.push_back(l_src2);
-
-	double i_l = 1;
-	double i_a = 1;
-
-	illuminateModel(camera,s,  i_l, i_a);
+	int n_pol;
+	inp>>tag>>n_pol;
+	for(int i=0;i<n_spheres;i++){
+		int n_vertices;
+		inp>>tag>>n_vertices;
+		vector<nVec> vertices;
+		for(int j=0;j<n_vertices;j++){
+			inp>>tag>>x>>y>>z;
+			vertices.push_back(nVec(x,y,z));
+		}
+		inp>>tag>>x>>y>>z;
+		Vec3b p_color = Vec3b(x,y,z);
+		double ka,kd,ks,spec_coeff;
+		inp>>tag>>ka>>kd>>ks>>spec_coeff;
+		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff);
+		polygons.push_back(p);
+	}
+	int n_lights;
+	inp>>tag>>n_lights;
+	for(int i=0;i<n_lights;i++){
+		inp>>tag>>x>>y>>z;
+		lights_srcs.push_back(nVec(x,y,z));
+		double l;
+		inp>>tag>>l;
+		i_l.push_back(l);
+	}
+	inp>>tag>>i_a;
+	inp>>tag>>image_length>>image_height;
+	illuminateModel(camera,sc);
 }

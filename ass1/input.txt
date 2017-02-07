@@ -1,0 +1,27 @@
+camera 0 0 -160
+screen_center 0 0 -40
+screen_normal 0 0 1
+screen_up 0 1 0
+screen_right 1 0 0
+screen_length 800
+screen_height 600
+n_spheres 1
+sp1_center 0 0 40
+sp1_radius 100
+sp1_color 0 0 255
+sp1_ka_kd_ks_spec 0.3 0.3 0.3 2
+n_polygons 1
+np1_vertices 4
+v1 -300 -300 150
+v2 300 -300 150
+v3 300 300 150
+v4 -300 300 150
+p1_color 200 0 0
+p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+n_lights 2
+l1 200 0 -300
+i_l1 1 
+l2 -300 0 -200
+i_l2 1
+i_a 0.5
+image_reso 800 600
