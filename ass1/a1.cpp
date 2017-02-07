@@ -8,12 +8,19 @@ vector<nVec> lights_srcs;
 vector<double> i_l;
 double i_a;
 int image_length,image_height;
+double pixel_d;
+int alias_factor = 1;
 
-void illuminateModel(nVec camera, Screen s){
-	Mat img(s.l,s.b, CV_8UC3, Vec3b(0,0,0));
+
+
+Mat illuminateModel(nVec camera, Screen s){
+	Mat tmp_img(image_height,image_length, CV_8UC3, Vec3b(0,0,0));
 	// nVec l_src;
-	for(int i = -1*s.l/2; i <= s.l/2; i+= s.l/image_height){
-		for(int j = -1*s.b/2; j <= s.b/2; j+= s.b/image_length){
+	double i=0,j=0;
+	for(double it1 = 0; it1 < image_height; it1++){
+		for(double it2 = 0; it2 < image_length; it2++){
+			i = (it1 - image_height/2.0)*pixel_d;
+			j = (it2 - image_length/2.0)*pixel_d;
 			nVec pixel = s.center + (s.up.scale(i)) + (s.
 					right.scale(j));
 			nVec rd = pixel - camera;
@@ -131,73 +138,100 @@ void illuminateModel(nVec camera, Screen s){
 
 				if(pol_intersect){
 					// cout << img.at<Vec3b>(i+s.l/2,j+s.b/2) <<  " , "  << blocked << ", pixel: " << pixel.x << "," << pixel.y << ","<<pixel.z << endl;
-					for(int i1 = 0;i1 < s.l/image_height;i1++){
-						for(int j1=0;j1 < s.b/image_length;j1++){
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[2] = min(polygons[int_k].color[2]*i_total,255.0);
-						}
-					}
+					// for(int i1 = 0;i1 < pixel_d;i1++){
+					// 	for(int j1=0;j1 < pixel_d;j1++){
+							tmp_img.at<Vec3b>(it1,it2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
+							tmp_img.at<Vec3b>(it1,it2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
+							tmp_img.at<Vec3b>(it1,it2)[2] = min(polygons[int_k].color[2]*i_total,255.0);
+					// 	}
+					// }
 				}
 				else{
-					for(int i1 = 0;i1 < s.l/image_height;i1++){
-						for(int j1=0;j1 < s.b/image_length;j1++){
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
-							img.at<Vec3b>(i+i1+s.l/2,j+j1+s.b/2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
-						}
-					}
+					// for(int i1 = 0;i1 < pixel_d;i1++){
+					// 	for(int j1=0;j1 < pixel_d;j1++){
+							tmp_img.at<Vec3b>(it1,it2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
+							tmp_img.at<Vec3b>(it1,it2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
+							tmp_img.at<Vec3b>(it1,it2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
+					// 	}
+					// }
 				}
 				
 			}
 
 		}
 	}
-	GaussianBlur(img,img,Size(5,5),0.5);
+	return tmp_img;
+	// GaussianBlur(img,img,Size(5,5),0.5);
+	// imshow("image", img);
+	// waitKey(0);
+}
+
+void antiAlias(nVec camera, Screen s){
+	Mat img(image_height, image_length, CV_8UC3, Vec3b(0,0,0));
+	image_height = alias_factor*image_height;
+	image_length = alias_factor*image_length;
+	pixel_d = pixel_d/float(alias_factor);
+	Mat tmp_img = illuminateModel(camera,s);
+	image_height = image_height/alias_factor;
+	image_length = image_length/alias_factor;
+	for(int i=0;i<image_height;i++){
+		for(int j=0;j<image_length;j++){
+			double x_c=0,y_c=0,z_c=0;
+			for(int i0=0;i0<alias_factor;i0++){
+				for(int j0=0;j0<alias_factor;j0++){
+					x_c += tmp_img.at<Vec3b>(i*alias_factor + i0, j*alias_factor + j0)[0];
+					y_c += tmp_img.at<Vec3b>(i*alias_factor + i0, j*alias_factor + j0)[1];
+					z_c += tmp_img.at<Vec3b>(i*alias_factor + i0, j*alias_factor + j0)[2];
+				}
+			}
+			img.at<Vec3b>(i,j) = Vec3b(x_c/(alias_factor*alias_factor), y_c/(alias_factor*alias_factor), z_c/(alias_factor*alias_factor));
+		}
+	}
 	imshow("image", img);
 	waitKey(0);
 }
 
-void generateImage(nVec camera, Screen s){
-	Mat img(s.l, s.b, CV_8UC3,Vec3b(0,0,0));
-	for(int i=-1*s.l/2; i <= s.l/2;i++){
-		for(int j = -1*s.b/2; j <= s.b/2;j++){
-			//traverse over all objects, and take the first	
-			nVec pixel = s.center + (s.up.scale(i)) + (s.
-					right.scale(j));
-			nVec rd = pixel - camera;
-			rd = rd.norm();
-			Ray r(camera, rd);
-			double t=1000000;
 
-			for(int k=0; k<spheres.size(); k++){
-				pair<double,double> int1 = spheres[k].intersect(r);
-				if(int1.first !=-1){
-					t = min(min(int1.first,int1.second), t);
-					if(t == min(int1.first, int1.second)){
-						img.at<Vec3b>(i+s.l/2,j+s.b/2) = spheres[k].color;
+// void generateImage(nVec camera, Screen s){
+// 	Mat img(s.l, s.b, CV_8UC3,Vec3b(0,0,0));
+// 	for(int i=-1*s.l/2; i <= s.l/2;i++){
+// 		for(int j = -1*s.b/2; j <= s.b/2;j++){
+// 			//traverse over all objects, and take the first	
+// 			nVec pixel = s.center + (s.up.scale(i)) + (s.
+// 					right.scale(j));
+// 			nVec rd = pixel - camera;
+// 			rd = rd.norm();
+// 			Ray r(camera, rd);
+// 			double t=1000000;
+
+// 			for(int k=0; k<spheres.size(); k++){
+// 				pair<double,double> int1 = spheres[k].intersect(r);
+// 				if(int1.first !=-1){
+// 					t = min(min(int1.first,int1.second), t);
+// 					if(t == min(int1.first, int1.second)){
+// 						img.at<Vec3b>(i+s.l/2,j+s.b/2) = spheres[k].color;
 						
-					}
+// 					}
 
-				}
-			}
-			for(int k=0;k<polygons.size(); k++){
-				double int2 = polygons[k].intersect(r);
-				if(int2 !=-1){
-					t = min(t,int2);
-					if(t == int2){
-						// cout << t << endl;
-						img.at<Vec3b>(i+s.l/2,j+s.b/2) = polygons[k].color;
+// 				}
+// 			}
+// 			for(int k=0;k<polygons.size(); k++){
+// 				double int2 = polygons[k].intersect(r);
+// 				if(int2 !=-1){
+// 					t = min(t,int2);
+// 					if(t == int2){
+// 						// cout << t << endl;
+// 						img.at<Vec3b>(i+s.l/2,j+s.b/2) = polygons[k].color;
 
-					} 
-				}
-			}
-		}
-	}
-	imshow("img", img);
-	waitKey(0);
+// 					} 
+// 				}
+// 			}
+// 		}
+// 	}
+// 	imshow("img", img);
+// 	waitKey(0);
 	
-}
+// }
 
 int main(int argc, char** argv){
 	ifstream inp(argv[1]);
@@ -216,12 +250,10 @@ int main(int argc, char** argv){
 	nVec sc_up(x,y,z);
 	inp>>tag>>x>>y>>z;
 	nVec sc_right(x,y,z);
-	inp>>tag>>x;
-	double sc_length = x;
-	inp>>tag>>x;
-	double sc_height = x;
+	inp>>tag>>pixel_d;
+	inp>>tag>>image_length>>image_height;
 
-	Screen sc(sc_height,sc_length,sc_center,sc_normal,sc_up,sc_right);
+	Screen sc(sc_center,sc_normal,sc_up,sc_right);
 
 	int n_spheres;
 	inp>>tag>>n_spheres;
@@ -254,17 +286,26 @@ int main(int argc, char** argv){
 		double ka,kd,ks,spec_coeff;
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
 		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff);
-		// polygons.push_back(p);
+		polygons.push_back(p);
 	}
 
-	spheres[0].affine=1;
+	polygons[0].affine=1;
 	Mat mat(4,4, CV_32FC1, float(0));
 	mat.at<float>(0,0)=1;
 	mat.at<float>(1,0)=1;
 	mat.at<float>(1,1)=2;
 	mat.at<float>(2,2)=3;
 	mat.at<float>(3,3)=1;
-	spheres[0].m = mat;
+	polygons[0].m = mat;
+
+	spheres[0].affine=1;
+	Mat mat2(4,4, CV_32FC1, float(0));
+	mat2.at<float>(0,0)=1;
+	mat2.at<float>(1,0)=1;
+	mat2.at<float>(1,1)=1;
+	mat2.at<float>(2,2)=1;
+	mat2.at<float>(3,3)=1;
+	spheres[0].m = mat2;
 
 	int n_lights;
 	inp>>tag>>n_lights;
@@ -277,6 +318,8 @@ int main(int argc, char** argv){
 	}
 	inp>>tag>>i_a;
 	inp>>tag>>image_length>>image_height;
-	illuminateModel(camera,sc);
+	// illuminateModel(camera,sc);
+
 	// Mat matrix(4,4,CV_32FC1)
+	antiAlias(camera,sc);
 }

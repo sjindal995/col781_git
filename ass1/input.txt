@@ -3,8 +3,8 @@ screen_center 0 0 -40
 screen_normal 0 0 1
 screen_up 0 1 0
 screen_right 1 0 0
-screen_length 800
-screen_height 600
+pixel_d 0.5
+image_reso 1000 700
 n_spheres 1
 sp1_center 0 0 40
 sp1_radius 100
@@ -24,4 +24,3 @@ i_l1 1
 l2 -300 0 -200
 i_l2 1
 i_a 0.5
-image_reso 800 600
