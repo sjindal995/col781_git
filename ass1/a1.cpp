@@ -76,6 +76,12 @@ Mat illuminateModel(nVec camera, Screen s){
 
 			double i_total = 0;
 			if (sphere_intersect || pol_intersect){
+				if(pol_intersect){
+					i_total += polygons[int_k].ka*i_a;
+				}
+				else{
+					i_total += spheres[int_k].ka*i_a;
+				}
 
 				for(int ll=0; ll<lights_srcs.size(); ll++){
 					
@@ -117,12 +123,6 @@ Mat illuminateModel(nVec camera, Screen s){
 								break;
 							}
 						}
-					}
-					if(pol_intersect){
-						i_total += polygons[int_k].ka*i_a;
-					}
-					else{
-						i_total += spheres[int_k].ka*i_a;
 					}
 					if(!blocked ){
 						if(pol_intersect){
@@ -289,7 +289,7 @@ int main(int argc, char** argv){
 		polygons.push_back(p);
 	}
 
-	polygons[0].affine=1;
+	polygons[0].affine=0;
 	Mat mat(4,4, CV_32FC1, float(0));
 	mat.at<float>(0,0)=1;
 	mat.at<float>(1,0)=1;
@@ -298,10 +298,10 @@ int main(int argc, char** argv){
 	mat.at<float>(3,3)=1;
 	polygons[0].m = mat;
 
-	spheres[0].affine=1;
+	spheres[0].affine=0;
 	Mat mat2(4,4, CV_32FC1, float(0));
 	mat2.at<float>(0,0)=1;
-	mat2.at<float>(1,0)=1;
+	mat2.at<float>(1,0)=0;
 	mat2.at<float>(1,1)=1;
 	mat2.at<float>(2,2)=1;
 	mat2.at<float>(3,3)=1;
