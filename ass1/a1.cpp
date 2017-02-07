@@ -4,6 +4,8 @@ vector<Sphere> spheres;
 
 vector<Polygon> polygons;
 
+vector<nVec> lights_srcs;
+
 void antiAlias(Mat* img){
 
 }
@@ -45,51 +47,38 @@ void illuminateModel(nVec camera, Screen s, nVec l_src, double i_l, double i_a){
 					} 
 				}
 			}
-			if(!sphere_intersect && !pol_intersect) continue;
+			// if(!sphere_intersect && !pol_intersect) continue;
 
-			nVec pt = camera + rd.scale(t);
-			nVec L = l_src - pt;
-			L = L.norm();
-			nVec N;
-			if(sphere_intersect && !pol_intersect){
-				N = pt - spheres[int_k].c;
-				N = N.norm();
-			}
-			else{
-				N = polygons[int_k].normal();
-			}
-			nVec R = N.scale(2*L.dotProd(N)) - L;
-			nVec V = camera - pt;
-			V = V.norm();
-			bool blocked = false;
-			Ray light_ray(pt, L);
-			for(int k1=0;k1<spheres.size();k1++){
-				if(sphere_intersect && !pol_intersect && (k1 == int_k)){
-					pair<double,double> pr = spheres[k1].intersect(light_ray);
-					if(pr.first > pow(10,-3)) {
-						// cout << "pr1: " << pr.first << " , pr2: " << pr.second <<  ", pt: " << pt.x << "," << pt.y << ","<<pt.z << " , " << (pr.first > 0) << endl;
- 						blocked = true;
-						break;
-					}
+			// nVec pt = camera + rd.scale(t);
+
+			if (sphere_intersect || pol_intersect){
+
+				nVec pt = r.Point(t);
+				nVec L = l_src - pt;
+				L = L.norm();
+				nVec N;
+				if(pol_intersect){
+					N = polygons[int_k].normal().scale(-1);
+					// N.print();
 				}
-				else if((k1 != int_k) || pol_intersect){
+				else{
+					N = pt - spheres[int_k].c;
+					N = N.norm();
+				}
+				nVec R = N.scale(2*L.dotProd(N)) - L;
+				nVec V = camera - pt;
+				V = V.norm();
+				bool blocked = false;
+				Ray light_ray(pt, L);
+				for(int k1=0;k1<spheres.size();k1++){
 					pair<double,double> pr = spheres[k1].intersect(light_ray);
 					if(pr.first > pow(10,-3)) {
 						blocked = true;
 						break;
 					}
 				}
-			}
-			if(!blocked){
-				for(int k1=0;k1<polygons.size();k1++){
-					if(pol_intersect && (k1 == int_k)){
-						double pr = polygons[k1].intersect(light_ray);
-						if(pr > pow(10,-3)) {
-							blocked = true;
-							break;
-						}
-					}
-					else if((k1 != int_k) || (sphere_intersect && !pol_intersect)){
+				if(!blocked){
+					for(int k1=0;k1<polygons.size();k1++){
 						double pr = polygons[k1].intersect(light_ray);
 						if(pr > pow(10,-3)) {
 							blocked = true;
@@ -97,34 +86,36 @@ void illuminateModel(nVec camera, Screen s, nVec l_src, double i_l, double i_a){
 						}
 					}
 				}
-			}
-			double i_total = 0;
-			if(sphere_intersect && !pol_intersect){
-				i_total = spheres[int_k].ka*i_a;
-			}
-			else{
-				i_total = polygons[int_k].ka*i_a;
-			}
-			if(!blocked){
-				if(sphere_intersect && !pol_intersect){
-					// cout << "1: " << (L.dotProd(N)) << ", 2: " << R.dotProd(V) << endl;
-					i_total += spheres[int_k].kd*i_l*(L.dotProd(N)) + spheres[int_k].ks*i_l*pow(R.dotProd(V),spheres[int_k].spec_coeff);
+				double i_total = 0;
+				if(pol_intersect){
+					i_total = polygons[int_k].ka*i_a;
 				}
 				else{
-					i_total += polygons[int_k].kd*i_l*L.dotProd(N) + polygons[int_k].ks*i_l*pow(R.dotProd(V),polygons[int_k].spec_coeff);
+					i_total = spheres[int_k].ka*i_a;
 				}
+				if(!blocked ){
+					if(pol_intersect){
+						i_total += max(polygons[int_k].kd*i_l*(L.dotProd(N)),0.0) + polygons[int_k].ks*i_l*pow(max(0.0,R.dotProd(V)),polygons[int_k].spec_coeff);
+						// cout << "1: " << (L.dotProd(N)) << ", 2: " << R.dotProd(V) << endl;
+					}
+					else{
+						i_total += max(spheres[int_k].kd*i_l*(L.dotProd(N)),0.0) + spheres[int_k].ks*i_l*pow(max(0.0,R.dotProd(V)),spheres[int_k].spec_coeff);
+					}
+				}
+				if(pol_intersect){
+					// cout << img.at<Vec3b>(i+s.l/2,j+s.b/2) <<  " , "  << blocked << ", pixel: " << pixel.x << "," << pixel.y << ","<<pixel.z << endl;
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(polygons[int_k].color[2]*i_total,255.0);	
+				}
+				else{
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
+					img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
+				}
+				
 			}
-			if(sphere_intersect && !pol_intersect){
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(spheres[int_k].color[0]*i_total,255.0);
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(spheres[int_k].color[1]*i_total,255.0);
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(spheres[int_k].color[2]*i_total,255.0);
-				// cout << img.at<Vec3b>(i+s.l/2,j+s.b/2) <<  " , "  << blocked << ", pixel: " << pixel.x << "," << pixel.y << ","<<pixel.z << endl;
-			}
-			else{
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[0] = min(polygons[int_k].color[0]*i_total,255.0);
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[1] = min(polygons[int_k].color[1]*i_total,255.0);
-				img.at<Vec3b>(i+s.l/2,j+s.b/2)[2] = min(polygons[int_k].color[2]*i_total,255.0);	
-			}
+
 		}
 	}
 	// GaussianBlur(img,img,Size(5,5),0.2);
@@ -160,7 +151,7 @@ void generateImage(nVec camera, Screen s){
 				if(int2 !=-1){
 					t = min(t,int2);
 					if(t == int2){
-						cout << t << endl;
+						// cout << t << endl;
 						img.at<Vec3b>(i+s.l/2,j+s.b/2) = polygons[k].color;
 
 					} 
@@ -180,25 +171,27 @@ int main(){
 	nVec right(1,0,0);
 	nVec center(0,0,40);
 	nVec center1(0,0,-40);
-	Sphere sp(center, 160, Vec3b(0,0,255));
-	spheres.push_back(sp);
+	Sphere sp(center, 100, Vec3b(0,0,255));
+	// spheres.push_back(sp);
 
-	Polygon p;
-	p.n=3;
+	// p.n=3;
 	vector<nVec> nv;
-	nv.push_back(nVec(-100,0,50));
-	nv.push_back(nVec(100,0,50));
-	nv.push_back(nVec(0,100,50));
-	p.vertices = nv;
-	p.color = Vec3b(0,255,0);
-	// polygons.push_back(p);
+	nv.push_back(nVec(-300,0,150));
+	nv.push_back(nVec(300,0,150));
+	nv.push_back(nVec(0,300,150));
+	// p.vertices = nv;
+	// p.color = Vec3b(0,255,0);
+	Polygon p(3,nv,Vec3b(0,255,0));
+
+	polygons.push_back(p);
 	p.normal().print();
 
 
 	Screen s(800,800,center1, normal, up, right);
 	generateImage(camera, s);
-	nVec l_src(100,0,-100);
-	double i_l = 5;
+	nVec l_src(300,0,-200);
+	// nVec l_src(50,-50,-140);
+	double i_l = 1;
 	double i_a = 1;
 
 	illuminateModel(camera,s, l_src, i_l, i_a);
