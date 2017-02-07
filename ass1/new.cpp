@@ -253,21 +253,17 @@ double Polygon::intersect(Ray R){
 
 class Screen{
 public:
-	int l;
-	int b;
 	nVec center;
 	nVec normal;
 	nVec up;
 	nVec right;
 	Screen();
-	Screen(int _l, int _b, nVec _center, nVec _normal, nVec _up, nVec _right);
+	Screen(nVec _center, nVec _normal, nVec _up, nVec _right);
 };
 
 Screen::Screen(){}
 
-Screen::Screen(int _l, int _b, nVec _center, nVec _normal, nVec _up, nVec _right){
-	l = _l;
-	b = _b;
+Screen::Screen(nVec _center, nVec _normal, nVec _up, nVec _right){
 	center = _center;
 	normal = _normal;
 	up = _up;
