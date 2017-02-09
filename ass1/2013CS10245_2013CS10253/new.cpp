@@ -138,7 +138,7 @@ class Sphere
 {
 public:
 	nVec c;
-	int r;
+	double r;
 	double ka;
 	double kd;
 	double ks;
@@ -149,16 +149,13 @@ public:
 	Vec3b color;
 	int affine;
 	Mat m;
-	// Sphere();
-	Sphere(nVec _c, int _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2, int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0)), double reflection = 0.3, double refraction = 0.3, double absorption = 0.4);
+	Sphere(nVec _c, double _r = 0, Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2, int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0)), double _reflection = 0.3, double _refraction = 0.3, double _absorption = 0.4);
 	pair <double,double> intersect(Ray R);
 	nVec normal(nVec);
 
 };
 
-// Sphere::Sphere(){}
-
-Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks, double _spec_coeff , int _affine, Mat _m, double relection, double refraction, double absorption){
+Sphere::Sphere(nVec _c,double _r , Vec3b _color, double _ka, double _kd, double _ks, double _spec_coeff , int _affine, Mat _m, double _reflection, double _refraction, double _absorption){
 	c = _c;
 	r = _r;
 	ka = _ka;
@@ -168,7 +165,9 @@ Sphere::Sphere(nVec _c,int _r , Vec3b _color, double _ka, double _kd, double _ks
 	color = _color;
 	affine = _affine;
 	m = _m;
-
+	reflection = _reflection;
+	refraction = _refraction;
+	absorption = _absorption;
 }
 
 pair <double,double> Sphere::intersect(Ray R){
@@ -226,7 +225,7 @@ public:
 
 // Polygon::Polygon(){}
 
-Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2,  int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0)), double reflecction = 0.3, double refraction = 0.3, double absorption = 0.4){
+Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255), double _ka = 0.3, double _kd = 0.3, double _ks = 0.3, double _spec_coeff = 2,  int _affine =0, Mat _m= Mat(4,4, CV_32FC1, float(0)), double _reflection = 0.3, double _refraction = 0.3, double _absorption = 0.4){
 	n = _n;
 	vertices = _vertices;
 	color = _color;
@@ -236,6 +235,9 @@ Polygon::Polygon(int _n,vector<nVec> _vertices,Vec3b _color = Vec3b(255,255,255)
 	spec_coeff = _spec_coeff;
 	affine = _affine;
 	m =_m;
+	reflection = _reflection;
+	refraction = _refraction;
+	absorption = _absorption;
 }
 
 nVec Polygon::normal(){
