@@ -1,4 +1,4 @@
-camera 0 0 200
+camera 20 -60 100
 screen_center 0 0 50
 screen_normal 0 0 1
 screen_up 0 1 0
@@ -6,32 +6,28 @@ screen_right 1 0 0
 pixel_d 0.5
 image_reso 700 700
 n_spheres 1
-sp1_center 75 20 -20
+sp1_center 20 80 -60
 sp1_radius 20
 sp1_color 0 0 255
 sp1_ka_kd_ks_spec 0.3 0.3 0.3 2
-n_polygons 3
+sp1_rra 0.0 0.0 1.0
+n_polygons 2
 np1_vertices 4
-v1 -150 0 -100
-v2 -150 0 -50
-v3 -150 100 -50
-v4 -150 100 -100
-p1_color 200 0 0
+v1 60 100 0
+v2 60 100 -100
+v3 -60 100 -100
+v4 -60 100 0
+p1_color 200 200 200
 p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+p1_rra 0.9 0.0 0.0
 np1_vertices 4
-v1 -150 0 -100
-v2 150 0 -100
-v3 150 100 -100
-v4 -150 100 -100
+v1 -60 0 -100
+v2 60 0 -100
+v3 60 100 -100
+v4 -60 100 -100
 p1_color 0 200 0
 p1_ka_kd_ks_spec 0.3 0.3 0.3 2
-np1_vertices 4
-v1 150 0 -50
-v2 150 0 -100
-v3 150 100 -100
-v4 150 100 -50
-p1_color 200 200 0
-p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+p1_rra 0.0 0.0 1.0
 n_lights 1
 l1 0 50 100
 i_l2 1

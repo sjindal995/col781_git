@@ -12,10 +12,6 @@ double pixel_d;
 int alias_factor = 3;
 
 Vec3b traceRay(Ray r, double factor){
-	// if(factor != 1){
-	// 	cout << "factor: " << factor << endl;
-	// 	exit(0);
-	// }
 	if(factor < 0.001) return 0;
 	double t=1000000;
 	bool pol_intersect = false;
@@ -24,16 +20,11 @@ Vec3b traceRay(Ray r, double factor){
 	Mat transm;
 
 	for(int k=0; k<spheres.size(); k++){
-		// if(sphere.affine==0){
 		pair<double,double> int1 = spheres[k].intersect(r);
-		// }
-		// else{
-		// 	pair<double,double> int1 = spheres[k].intersect()
-		// }
-		if(int1.first !=-1){
+		if(int1.first > 0){
 			t = min(min(int1.first,int1.second), t);
-			if(t == min(int1.first, int1.second)){
-				// img.at<Vec3b>(i+s.l/2,j+s.b/2) = spheres[k].color;
+			if(t < 0) t = min(int1.first, t);
+			if(t == int1.first || t == int1.second){
 				if(spheres[k].affine==1) {
 					aff=1;
 					transm = spheres[k].m;
@@ -47,10 +38,9 @@ Vec3b traceRay(Ray r, double factor){
 	}
 	for(int k=0;k<polygons.size(); k++){
 		double int2 = polygons[k].intersect(r);
-		if(int2 !=-1){
+		if(int2 > 0){
 			t = min(t,int2);
 			if(t == int2){
-				// img.at<Vec3b>(i+s.l/2,j+s.b/2) = polygons[k].color;
 				if(polygons[k].affine==1) {
 					aff=1;
 					transm = polygons[k].m;
@@ -123,17 +113,19 @@ Vec3b traceRay(Ray r, double factor){
 		}
 		if(pol_intersect){
 			nVec ref = N.scale(2*(r.rd).dotProd(N)) - r.rd;
+			ref = ref.norm();
+			ref = ref.scale(-1);
 			Ray reflected_ray(pt, ref);
-			// cout << "refl: " << polygons[int_k].reflection << endl;
 			Vec3b newColor = traceRay(reflected_ray,factor*polygons[int_k].reflection);
-			color[0] = min(newColor[0] + factor*polygons[int_k].color[0]*i_total,255.0);
-			color[1] = min(newColor[1] + factor*polygons[int_k].color[1]*i_total,255.0);
-			color[2] = min(newColor[2] + factor*polygons[int_k].color[2]*i_total,255.0);
+			color[0] = min((newColor[0] + factor*polygons[int_k].color[0])*i_total,255.0);
+			color[1] = min((newColor[1] + factor*polygons[int_k].color[1])*i_total,255.0);
+			color[2] = min((newColor[2] + factor*polygons[int_k].color[2])*i_total,255.0);
 		}
 		else{
 			nVec ref = N.scale(2*(r.rd).dotProd(N)) - r.rd;
+			ref = ref.norm();
+			ref = ref.scale(-1);
 			Ray reflected_ray(pt, ref);
-			// cout << "refl2: " << polygons[int_k].reflection << endl;
 			Vec3b newColor = traceRay(reflected_ray,factor*spheres[int_k].reflection);
 			color[0] = min(newColor[0] + factor*spheres[int_k].color[0]*i_total,255.0);
 			color[1] = min(newColor[1] + factor*spheres[int_k].color[1]*i_total,255.0);
@@ -220,8 +212,9 @@ int main(int argc, char** argv){
 		Vec3b sp_color = Vec3b(0,0,255);
 		double ka,kd,ks,spec_coeff;
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
-		double reflection = 0.3;
-		Sphere sp(sp_center,sp_radius,sp_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,reflection,reflection);
+		double reflection, refraction, absorption;
+		inp>>tag>>reflection>>refraction>>absorption;
+		Sphere sp(sp_center,sp_radius,sp_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,refraction,absorption);
 		spheres.push_back(sp);
 	}
 
@@ -240,8 +233,9 @@ int main(int argc, char** argv){
 		Vec3b p_color = Vec3b(x,y,z);
 		double ka,kd,ks,spec_coeff;
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
-		double reflection = 0.3;
-		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,reflection,reflection);
+		double reflection,refraction, absorption;
+		inp>>tag>>reflection>>refraction>>absorption;
+		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,refraction,absorption);
 		polygons.push_back(p);
 	}
 
