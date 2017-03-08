@@ -9,11 +9,14 @@ vector<double> i_l;
 double i_a;
 int image_length,image_height;
 double pixel_d;
-int alias_factor = 3;
+int alias_factor = 1;
 
-Vec3b traceRay(Ray r, double factor){
+//ri-> refreactive index of the medium of the ray
+Vec3b traceRay(Ray r, double factor, double ri_in, int rray){
+	// cout<<"ri "<<ri_in<<endl;
 	if(factor < 0.001) return 0;
-	double t=1000000;
+	// cout<<"working"<<endl;
+	double t=1000000, tempt=-1;
 	bool pol_intersect = false;
 	bool sphere_intersect = false;
 	int int_k = -1, aff=0;
@@ -21,9 +24,12 @@ Vec3b traceRay(Ray r, double factor){
 
 	for(int k=0; k<spheres.size(); k++){
 		pair<double,double> int1 = spheres[k].intersect(r);
-		if(int1.first > 0){
-			t = min(min(int1.first,int1.second), t);
-			if(t < 0) t = min(int1.first, t);
+		if(int1.first > 0.001){
+			tempt = min(int1.first,int1.second);
+			if(tempt<0 || abs(tempt) < 0.001) t = min(int1.first,t);
+			else t = tempt;
+			// t = min(min(int1.first,int1.second), t);
+			// if(t < 0) t = min(int1.first, );
 			if(t == int1.first || t == int1.second){
 				if(spheres[k].affine==1) {
 					aff=1;
@@ -75,7 +81,6 @@ Vec3b traceRay(Ray r, double factor){
 		for(int ll=0; ll<lights_srcs.size(); ll++){
 			
 			nVec l_src = lights_srcs[ll];
-			// l_src.print();
 			nVec L = l_src - pt;
 			L = L.norm();
 			nVec R = N.scale(2*L.dotProd(N)) - L;
@@ -116,20 +121,54 @@ Vec3b traceRay(Ray r, double factor){
 			ref = ref.norm();
 			ref = ref.scale(-1);
 			Ray reflected_ray(pt, ref);
-			Vec3b newColor = traceRay(reflected_ray,factor*polygons[int_k].reflection);
-			color[0] = min((newColor[0] + factor*polygons[int_k].color[0])*i_total,255.0);
-			color[1] = min((newColor[1] + factor*polygons[int_k].color[1])*i_total,255.0);
-			color[2] = min((newColor[2] + factor*polygons[int_k].color[2])*i_total,255.0);
+			Vec3b newColor = traceRay(reflected_ray,factor*polygons[int_k].reflection,1.0,0);
+			// if(rray==1) cout<<"here"<<endl;
+			color[0] = min((newColor[0] + polygons[int_k].absorption*factor*polygons[int_k].color[0])*i_total,255.0);
+			color[1] = min((newColor[1] + polygons[int_k].absorption*factor*polygons[int_k].color[1])*i_total,255.0);
+			color[2] = min((newColor[2] + polygons[int_k].absorption*factor*polygons[int_k].color[2])*i_total,255.0);
 		}
 		else{
 			nVec ref = N.scale(2*(r.rd).dotProd(N)) - r.rd;
 			ref = ref.norm();
 			ref = ref.scale(-1);
 			Ray reflected_ray(pt, ref);
-			Vec3b newColor = traceRay(reflected_ray,factor*spheres[int_k].reflection);
-			color[0] = min(newColor[0] + factor*spheres[int_k].color[0]*i_total,255.0);
-			color[1] = min(newColor[1] + factor*spheres[int_k].color[1]*i_total,255.0);
-			color[2] = min(newColor[2] + factor*spheres[int_k].color[2]*i_total,255.0);
+			double ri_out;
+			bool going_out = false;
+			if(N.dotProd(r.rd)>=0){
+				ri_in = spheres[int_k].ref_ind;
+				ri_out = 1.0;
+				N = N.scale(-1);
+				going_out = true;
+			}
+			else{
+				ri_in = 1.0;
+				ri_out = spheres[int_k].ref_ind;
+			}
+			double nr = ri_in/ri_out;
+			// double c1 = abs((-1)*r.rd.dotProd(N));
+			double c1 = (-1)*r.rd.dotProd(N);
+			double c2 = sqrt(1 - nr*nr*(1 - c1*c1));
+			nVec rref = r.rd.scale(nr) + N.scale(nr*c1 - c2);
+			// if(1 - nr*nr*(1 - c1*c1) < 0){
+			// 	cout << nr << endl;
+			// 	cout << c1 << endl;
+			// 	cout << 1 - nr*nr*(1 - c1*c1) << endl;
+			// 	cout << r.rd.x << "," << r.rd.y << ","<<r.rd.z << endl;
+			// 	cout << N.x << "," << N.y << ","<< N.z << endl;
+			// 	cout << rref.x << ","<<rref.y<<","<<rref.z<<endl;
+			// 	exit(0);
+
+			// }
+			rref = rref.norm();
+			Ray refracted_ray(pt,rref);
+			// cout<<"sphere ref ind "<<ri_out<<" refractivity "<<spheres[int_k].refraction<<endl;
+			Vec3b newColor = traceRay(reflected_ray,factor*spheres[int_k].reflection,1.0,0);
+			Vec3b newColor2 = traceRay(refracted_ray,factor*spheres[int_k].refraction,ri_out,1);
+			color[0] = min(newColor[0] + newColor2[0] + factor*spheres[int_k].absorption*spheres[int_k].color[0]*i_total,255.0);
+			color[1] = min(newColor[1] + newColor2[1] + factor*spheres[int_k].absorption*spheres[int_k].color[1]*i_total,255.0);
+			color[2] = min(newColor[2] + newColor2[2] + factor*spheres[int_k].absorption*spheres[int_k].color[2]*i_total,255.0);
+			// cout<<newColor2<<" "<<color<<endl;
+			
 		}
 
 	}
@@ -148,7 +187,7 @@ Mat illuminateModel(nVec camera, Screen s){
 			nVec rd = pixel - camera;
 			rd = rd.norm();
 			Ray r(camera, rd);
-			tmp_img.at<Vec3b>(it1,it2) = traceRay(r,1);
+			tmp_img.at<Vec3b>(it1,it2) = traceRay(r,1,1.0,0);
 		}
 	}
 	return tmp_img;
@@ -209,12 +248,23 @@ int main(int argc, char** argv){
 		double sp_radius;
 		inp>>tag>>sp_radius;
 		inp>>tag>>x>>y>>z;
-		Vec3b sp_color = Vec3b(0,0,255);
+		// Vec3b sp_color = Vec3b(0,0,255);
+		Vec3b sp_color = Vec3b(x,y,z);
 		double ka,kd,ks,spec_coeff;
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
-		double reflection, refraction, absorption;
-		inp>>tag>>reflection>>refraction>>absorption;
-		Sphere sp(sp_center,sp_radius,sp_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,refraction,absorption);
+		double reflection, refraction, absorption, ref_ind;
+		inp>>tag>>reflection>>refraction>>absorption>>ref_ind;
+		int affine;
+		inp>>tag>>affine;
+		Mat affine_mat = Mat(4,4, CV_32FC1, float(0));
+		if(affine==1){
+			for(int i0=0;i0<4;i0++){
+				for(int i1=0;i1<4;i1++){
+					inp>>affine_mat.at<float>(i0,i1);
+				}
+			}
+		}
+		Sphere sp(sp_center,sp_radius,sp_color,ka,kd,ks,spec_coeff,affine,affine_mat,reflection,refraction,absorption,ref_ind);
 		spheres.push_back(sp);
 	}
 
@@ -235,29 +285,19 @@ int main(int argc, char** argv){
 		inp>>tag>>ka>>kd>>ks>>spec_coeff;
 		double reflection,refraction, absorption;
 		inp>>tag>>reflection>>refraction>>absorption;
-		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff,0,Mat(4,4, CV_32FC1, float(0)),reflection,refraction,absorption);
+		int affine;
+		inp>>tag>>affine;
+		Mat affine_mat = Mat(4,4, CV_32FC1, float(0));
+		if(affine==1){
+			for(int i0=0;i0<4;i0++){
+				for(int i1=0;i1<4;i1++){
+					inp>>affine_mat.at<float>(i0,i1);
+				}
+			}
+		}
+		Polygon p(n_vertices,vertices,p_color,ka,kd,ks,spec_coeff,affine,affine_mat ,reflection,refraction,absorption);
 		polygons.push_back(p);
 	}
-
-	// polygons[0].affine=1;
-	// Mat mat(4,4, CV_32FC1, float(0));
-	// mat.at<float>(0,0)=1;
-	// mat.at<float>(1,0)=-1;
-	// mat.at<float>(1,1)=2;
-	// mat.at<float>(2,2)=3;
-	// mat.at<float>(3,3)=1;
-	// polygons[0].m = mat;
-
-	// spheres[0].affine=1;
-	// Mat mat2(4,4, CV_32FC1, float(0));
-	// mat2.at<float>(0,0)=0.5;
-	// mat2.at<float>(1,0)=0.2;
-	// mat2.at<float>(1,1)=0.5;
-	// mat2.at<float>(2,2)=0.5;
-	// // mat2.at<float>(2,0)=1;
-	// mat2.at<float>(3,3)=1;
-	// spheres[0].m = mat2;
-
 	int n_lights;
 	inp>>tag>>n_lights;
 	for(int i=0;i<n_lights;i++){
@@ -268,7 +308,8 @@ int main(int argc, char** argv){
 		i_l.push_back(l);
 	}
 	inp>>tag>>i_a;
-	inp>>tag>>image_length>>image_height;
+	// inp>>tag>>image_length>>image_height;
+	cout << image_length << image_height << endl;
 	// illuminateModel(camera,sc);
 
 	// Mat matrix(4,4,CV_32FC1)

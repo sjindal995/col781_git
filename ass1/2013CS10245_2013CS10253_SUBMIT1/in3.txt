@@ -10,7 +10,12 @@ sp1_center 20 80 -60
 sp1_radius 20
 sp1_color 0 0 255
 sp1_ka_kd_ks_spec 0.3 0.3 0.3 2
-sp1_rra 0.0 0.0 1.0
+sp1_rra 0.0 0.0 1.0 2
+affine 1
+0.5 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
 n_polygons 2
 np1_vertices 4
 v1 60 100 0
@@ -20,6 +25,7 @@ v4 -60 100 0
 p1_color 200 200 200
 p1_ka_kd_ks_spec 0.3 0.3 0.3 2
 p1_rra 0.9 0.0 0.0
+affine 0
 np1_vertices 4
 v1 -60 0 -100
 v2 60 0 -100
@@ -28,6 +34,7 @@ v4 -60 100 -100
 p1_color 0 200 0
 p1_ka_kd_ks_spec 0.3 0.3 0.3 2
 p1_rra 0.0 0.0 1.0
+affine 0
 n_lights 1
 l1 0 50 100
 i_l2 1

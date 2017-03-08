@@ -1,0 +1,48 @@
+camera 0 0 150
+screen_center 0 0 140
+screen_normal 0 0 -1
+screen_up 0 1 0
+screen_right 1 0 0
+pixel_d 0.05
+image_reso 700 700
+n_spheres 1
+sp1_center 0 0 -50
+sp1_radius 30
+sp1_color 255 255 255
+sp1_ka_kd_ks_spec 0.3 0.3 0.3 2
+sp1_rra 0.0 0.7 0.3 1.5
+affine 0
+n_polygons 3
+np1_vertices 4
+v1 -100 100 0
+v2 -100 -100 0
+v3 0 -100 -100
+v4 0 100 -100
+p1_color 0 255 0
+p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+p1_rra 0.5 0.0 0.5
+affine 0
+np1_vertices 4
+v1 0 100 -100
+v2 0 -100 -100
+v3 100 -100 0
+v4 100 100 0
+p1_color 255 0 0
+p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+p1_rra 0.5 0.0 0.5
+affine 0
+np1_vertices 4
+v1 -100 -100 0
+v2 0 -100 -100
+v3 100 -100 0
+v4 0 -100 -100
+p1_color 255 255 255
+p1_ka_kd_ks_spec 0.3 0.3 0.3 2
+p1_rra 0.5 0.0 0.5
+affine 0
+n_lights 2
+l1 200 0 100
+l2 -200 0 100
+i_l1 1
+i_l2 1
+i_a 1
