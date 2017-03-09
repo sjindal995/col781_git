@@ -1,19 +1,16 @@
 #version 330 core
-layout(location = 0) in vec3 vertexPosition_modelspace;
-//layout(location = 1) in vec3 vertexColor;
-//out vec3 fragmentColor;
-layout(location = 1) in vec2 vertexUV;
-out vec2 UV;
+layout (location = 0) in vec3 position;
+layout (location = 2) in vec2 texCoord;
 
-// Values that stay constant for the whole mesh.
-uniform mat4 MVP;
+out vec2 TexCoord;
 
-void main(){
-	// Output position of the vertex, in clip space : MVP * position
-  	gl_Position =  MVP * vec4(vertexPosition_modelspace,1);	
-	//gl_Position.xyz = vertexPosition_modelspace;
-	//gl_Position.w = 1.0;	
+uniform mat4 transform;
+uniform mat4 mvp;
 
-	//fragmentColor = vertexColor;
-	UV = vertexUV;
-}	
+void main()
+{
+	gl_Position = transform * mvp * vec4(position, 1.0f);
+	// We swap the y-axis by substracing our coordinates from 1. This is done because most images have the top y-axis inversed with OpenGL's top y-axis.
+	// TexCoord = texCoord;
+	TexCoord = vec2(texCoord.x, 1.0 - texCoord.y);
+}

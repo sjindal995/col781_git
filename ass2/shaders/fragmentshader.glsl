@@ -1,14 +1,14 @@
 #version 330 core
+in vec2 TexCoord;
 
-//in vec3 fragmentColor;
-in vec2 UV;
-out vec3 color;
+out vec4 color;
 
-// Values that stay constant for the whole mesh.
-uniform sampler2D myTextureSampler;
+// Texture samplers
+uniform sampler2D ourTexture1;
+uniform sampler2D ourTexture2;
 
-void main(){
-  //color = vec3(1,0,0);
-   //color = fragmentColor;
-    color = texture( myTextureSampler, UV ).rgb;
+void main()
+{
+	// Linearly interpolate between both textures (second texture is only slightly combined)
+	color = mix(texture(ourTexture1, TexCoord), texture(ourTexture2, TexCoord), 0.2);
 }

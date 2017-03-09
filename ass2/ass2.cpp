@@ -6,6 +6,7 @@
 #include <GL/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
@@ -243,28 +244,28 @@ static void RenderCube() {
          (void*)0            // array buffer offset
       );
 
-      // glEnableVertexAttribArray(1);
-      // glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-      // glVertexAttribPointer(
-      //   1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-      //   3,                                // size
-      //   GL_FLOAT,                         // type
-      //   GL_FALSE,                         // normalized?
-      //   0,                                // stride
-      //   (void*)0                          // array buffer offset
-      // );
-      
-      // 2nd attribute buffer : UVs
       glEnableVertexAttribArray(1);
-      glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
       glVertexAttribPointer(
         1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-        2,                                // size : U+V => 2
+        3,                                // size
         GL_FLOAT,                         // type
         GL_FALSE,                         // normalized?
         0,                                // stride
         (void*)0                          // array buffer offset
       );
+      
+      // // 2nd attribute buffer : UVs
+      // glEnableVertexAttribArray(1);
+      // glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+      // glVertexAttribPointer(
+      //   1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+      //   2,                                // size : U+V => 2
+      //   GL_FLOAT,                         // type
+      //   GL_FALSE,                         // normalized?
+      //   0,                                // stride
+      //   (void*)0                          // array buffer offset
+      // );
 
       // Draw the triangle !
       glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
@@ -368,18 +369,18 @@ void AppMain() {
     glDepthFunc(GL_LESS);
       // LoadTriangle();
       LoadCube();
-      // LoadCubeColor();
-      LoadCubeTexture();
+      LoadCubeColor();
+      // LoadCubeTexture();
     // run while the window is open
     // Create and compile our GLSL program from the shaders
 
-    GLuint Texture = loadBMP_custom("textures/uvtemplate.bmp");
+    // GLuint Texture = loadBMP_custom("textures/uvtemplate.bmp");
     // GLuint Texture = loadDDS("textures/uvtemplate.DDS");
 
 
     GLuint programID = LoadShaders( "shaders/vertexshader.glsl", "shaders/fragmentshader.glsl" );
 
-    GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+    // GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Get a handle for our "MVP" uniform
     // Only during the initialisation
@@ -427,11 +428,11 @@ void AppMain() {
       // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
       glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-      // Bind our texture in Texture Unit 0
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, Texture);
-      // Set our "myTextureSampler" sampler to user Texture Unit 0
-      glUniform1i(TextureID, 0);
+      // // Bind our texture in Texture Unit 0
+      // glActiveTexture(GL_TEXTURE0);
+      // glBindTexture(GL_TEXTURE_2D, Texture);
+      // // Set our "myTextureSampler" sampler to user Texture Unit 0
+      // glUniform1i(TextureID, 0);
 
 
       // process pending events
