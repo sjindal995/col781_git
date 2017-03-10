@@ -125,6 +125,16 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
+
+    GLfloat xz_plane[] = {
+        -50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
+        -50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
+        -50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f
+    };
+
     glm::vec3 cubePositions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f), 
         // glm::vec3( 2.0f,  5.0f, -15.0f), 
@@ -157,6 +167,28 @@ int main()
     // TexCoord attribute
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // Unbind VAO
+
+    GLuint VAO2, VBO2;
+    glGenVertexArrays(1,&VAO2);
+    glGenBuffers(1, &VBO2);
+
+    glBindVertexArray(VAO2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(xz_plane), xz_plane, GL_STATIC_DRAW);
+
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    // // TexCoord attribute
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    // glEnableVertexAttribArray(2);
 
     glBindVertexArray(0); // Unbind VAO
 
@@ -233,19 +265,7 @@ int main()
         mat4 projection;
         mat4 mvp;
 
-        // glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-        // glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-        // glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-        // glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
-        // glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-        // glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-        // GLfloat radius = 10.0f;
-        // GLfloat camX = sin(glfwGetTime()) * radius;
-        // GLfloat camZ = cos(glfwGetTime()) * radius;
-        // view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-        // // model = glm::rotate(model, (GLfloat)glfwGetTime() * radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        // // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
+        
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = glm::perspective(radians(fov), GLfloat(WIDTH) / GLfloat(HEIGHT), 0.1f, 100.0f);
 
@@ -279,12 +299,17 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
         glBindVertexArray(0);
-        
-        // // Draw container
-        // glBindVertexArray(VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
-        // glBindVertexArray(0);
+
+
+        mat4 mvp1 = projection*view;
+        // Draw container
+        glBindVertexArray(VAO2);
+
+        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp1));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
@@ -310,6 +335,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_A)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(key == GLFW_KEY_D)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if(key == GLFW_KEY_UP)
+        cameraPos += cameraSpeed*cameraUp;
+    if(key == GLFW_KEY_DOWN)
+        cameraPos -= cameraSpeed*cameraUp;
+    if(key == GLFW_KEY_LEFT)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if(key == GLFW_KEY_RIGHT)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(action == GLFW_PRESS)
       keys[key] = true;
