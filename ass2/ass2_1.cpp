@@ -33,7 +33,7 @@ void do_movement();
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  15.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 bool keys[1024];
@@ -127,15 +127,15 @@ int main()
     };
     glm::vec3 cubePositions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
+        // glm::vec3( 2.0f,  5.0f, -15.0f), 
+        // glm::vec3(-1.5f, -2.2f, -2.5f),  
+        // glm::vec3(-3.8f, -2.0f, -12.3f),  
+        // glm::vec3( 2.4f, -0.4f, -3.5f),  
+        // glm::vec3(-1.7f,  3.0f, -7.5f),  
+        // glm::vec3( 1.3f, -2.0f, -2.5f),  
+        // glm::vec3( 1.5f,  2.0f, -2.5f), 
+        // glm::vec3( 1.5f,  0.2f, -1.5f), 
+        // glm::vec3(-1.3f,  1.0f, -1.5f)  
     };
 
     GLuint VBO, VAO;
@@ -253,18 +253,25 @@ int main()
 
         // Create transformations
         glm::mat4 transform;
-        // transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        GLfloat radius = 5;
+        // GLfloat angle = (GLfloat)glfwGetTime() * radians(25.0f);
+        GLfloat x_translate = (GLfloat)glfwGetTime();
+        GLfloat y_translate = abs(sin(x_translate));
+        GLfloat z_translate = 0; 
+
+        transform = glm::translate(transform, glm::vec3(x_translate, y_translate, z_translate));
         // transform = glm::rotate(transform, (GLfloat)glfwGetTime() * radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
-        // Get matrix's uniform location and set matrix
-        GLint transformLoc = glGetUniformLocation(ourShader.Program, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        // // Get matrix's uniform location and set matrix
+        // GLint transformLoc = glGetUniformLocation(ourShader.Program, "transform");
+        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
         glBindVertexArray(VAO);
-        for(GLuint i = 0; i < 10; i++)
+        for(GLuint i = 0; i < 1; i++)
         {
             mat4 model;
             model = glm::translate(model, cubePositions[i]);
+            model *= transform;
             GLfloat angle = radians(20.0f) * i; 
             model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
             mvp = projection*view*model;
