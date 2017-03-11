@@ -54,7 +54,7 @@ object::object(int id){
 mat4 object::getTransform(float k){
     if( objid==0){
         mat4 tr(1.0f);
-        tr = glm::translate(tr, vec3(k/10,2.0f*sin(glm::radians(k*100)), 0.0f));
+        tr = glm::translate(tr, vec3(-k/10,2.0f*abs(sin(glm::radians(k*50))), 0.0f));
         // tr = glm::rotate(tr, k, vec3(0.0f, 1.0f, 0.0f));
 		return tr;
     }
@@ -64,14 +64,14 @@ mat4 object::getTransform(float k){
         tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
         // float angle = 0.523599f+k;
         // if(angle > 0.523599f*2)
-        tr = glm::rotate(tr, 0.523599f*cos(glm::radians(k*100)), vec3(1.0f,0.0f, 0.0f ));
+        tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
         tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
         return tr;
     }
     else if (objid==4){
         mat4 tr(1.0f);
         tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
-        tr = glm::rotate(tr, -0.523599f*cos(glm::radians(k*100)), vec3(1.0f,0.0f, 0.0f ));
+        tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
         tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
         return tr;
 
@@ -210,41 +210,14 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( -0.75f,  0.5f,  0.0f), 
-        glm::vec3(-1.125f, 1.125f, -0.25f),  
-        glm::vec3(-1.125f, 1.125f, +0.25f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-    glm::vec3 cubeScales[] = {
-        glm::vec3( 1.5f,  1.0f,  1.0f), 
-        glm::vec3( 1.0f,  1.0f,  0.75f), 
-        glm::vec3(0.25f, 0.25f, 0.25f),  
-        glm::vec3(0.25f, 0.25f, 0.25f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-    glm::vec3 cubeRotnAxes[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 0.0f,  0.0f,  -1.0f), 
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 0.0f,  0.0f,  -1.0f), 
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    
+    GLfloat xz_plane[] = {
+        -50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
+         50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
+        -50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
+        -50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f
     };
 
     object obj1(0);
@@ -331,6 +304,27 @@ int main()
 
     glBindVertexArray(0); // Unbind VAO
 
+    GLuint VAO2, VBO2;
+    glGenVertexArrays(1,&VAO2);
+    glGenBuffers(1, &VBO2);
+
+    glBindVertexArray(VAO2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(xz_plane), xz_plane, GL_STATIC_DRAW);
+
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    // // TexCoord attribute
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    // glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // Unbind VAO
 
     // Load and create a texture 
     GLuint texture1;
@@ -348,7 +342,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Load, create texture and generate mipmaps
     int width, height;
-    unsigned char* image = SOIL_load_image("textures/container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image("textures/grass.png", &width, &height, 0, SOIL_LOAD_RGB);
     // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -366,7 +360,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Load, create texture and generate mipmaps
-    image = SOIL_load_image("textures/awesomeface.png", &width, &height, 0, SOIL_LOAD_RGB);
+    image = SOIL_load_image("textures/frog1.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
     SOIL_free_image_data(image);
@@ -461,6 +455,14 @@ int main()
         //obj1.rAngleR = (GLfloat)glfwGetTime() * radians(5.0f);
         glBindVertexArray(0);
         
+        mat4 mvp1 = projection*view;
+        // Draw container
+        glBindVertexArray(VAO2);
+
+        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp1));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
         // // Draw container
         // glBindVertexArray(VAO);
         // glDrawArrays(GL_TRIANGLES, 0, 36);
