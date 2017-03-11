@@ -25,6 +25,8 @@ mat4 projection;
 mat4 view;
 GLint mvp_loc ;
 
+vec3 destination = vec3(10.f,0.0f,5.0f);
+
 class object
 {
     public:
@@ -54,8 +56,9 @@ object::object(int id){
 mat4 object::getTransform(float k){
     if( objid==0){
         mat4 tr(1.0f);
-        tr = glm::translate(tr, vec3(-k/10,2.0f*abs(sin(glm::radians(k*50))), 0.0f));
-        // tr = glm::rotate(tr, k, vec3(0.0f, 1.0f, 0.0f));
+        vec3 dirxn = normalize(destination);
+        tr = glm::translate(tr, vec3(k/2 * dirxn[0],2.0f*abs(sin(glm::radians(k*50))), k/2*dirxn[2]));
+        tr = glm::rotate(tr, radians(180.0f) - atan(dirxn[2]/dirxn[0]), vec3(0.0f, 1.0f, 0.0f));
 		return tr;
     }
     else if(objid==2){
@@ -118,7 +121,7 @@ void do_movement();
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 5.0f,  10.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 bool keys[1024];
@@ -212,12 +215,12 @@ int main()
     };
     
     GLfloat xz_plane[] = {
-        -50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
-        -50.0f,  -3.0f,  50.0f,  1.0f, 1.0f, 0.2f,
-        -50.0f,  -3.0f, -50.0f,  1.0f, 1.0f, 0.2f
+        -50.0f,  -3.0f, -50.0f,  0.0f, 0.1f,
+         50.0f,  -3.0f, -50.0f,  0.1f, 0.1f,
+         50.0f,  -3.0f,  50.0f,  0.1f, 0.0f,
+         50.0f,  -3.0f,  50.0f,  0.1f, 0.0f,
+        -50.0f,  -3.0f,  50.0f,  0.0f, 0.0f,
+        -50.0f,  -3.0f, -50.0f,  0.0f, 0.1f,
     };
 
     object obj1(0);
@@ -323,14 +326,14 @@ int main()
 
     
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-    // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
-    // // TexCoord attribute
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    // glEnableVertexAttribArray(2);
+    // // Color attribute
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    // glEnableVertexAttribArray(1);
+    // TexCoord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0); // Unbind VAO
 
@@ -350,7 +353,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Load, create texture and generate mipmaps
     int width, height;
-    unsigned char* image = SOIL_load_image("textures/grass.png", &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image("textures/skin.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -492,7 +495,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
-    GLfloat cameraSpeed = 0.05f;
+    GLfloat cameraSpeed = 0.1f;
     if(key == GLFW_KEY_W)
         cameraPos += cameraSpeed * cameraFront;
     if(key == GLFW_KEY_S)
@@ -500,6 +503,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_A)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(key == GLFW_KEY_D)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if(key == GLFW_KEY_UP)
+        cameraPos += cameraSpeed*cameraUp;
+    if(key == GLFW_KEY_DOWN)
+        cameraPos -= cameraSpeed*cameraUp;
+    if(key == GLFW_KEY_LEFT)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if(key == GLFW_KEY_RIGHT)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(action == GLFW_PRESS)
       keys[key] = true;
@@ -553,7 +564,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void do_movement()
 {
   // Camera controls
-  GLfloat cameraSpeed = 5.0f*deltaTime;
+  GLfloat cameraSpeed = 10.0f*deltaTime;
   if(keys[GLFW_KEY_W])
     cameraPos += cameraSpeed * cameraFront;
   if(keys[GLFW_KEY_S])

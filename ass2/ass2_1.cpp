@@ -281,11 +281,13 @@ int main()
 
         if(unconvertedClick){
             unconvertedClick=false;
-            vec4 temp = vec4(nextPos[0],nextPos[2],0.0f,1.0f);
-            temp[0] = (temp[0]/WIDTH * 2);
-            temp[1] = (temp[1]/HEIGHT * 2);
-            temp = inverse(projection * view) * temp;
-            cout << temp[0] << " , " << temp[1] << endl;
+            vec4 temp;
+            temp[0] = (nextPos[0] * 2)/WIDTH - 1;
+            temp[1] = -(nextPos[2] * 2)/HEIGHT + 1;
+            temp[2] = 0.0f;
+            temp[3] = 1.0f;
+            vec4 temp2 = inverse(projection * view) * temp;
+            cout << temp2[0] << " , " << temp2[1] << endl;
             cout << "current: " << currentPos[0] << " , " << currentPos[1] << endl;
             // nextPos[0] = temp[0];
             // nextPos[1] = temp[1];
