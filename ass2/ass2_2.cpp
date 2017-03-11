@@ -33,43 +33,78 @@ class object
         vec3 translateR;
         vec3 rAxisR;
         GLfloat rAngleR;
+        int objid;  //0 for body, 1 for head, 2 for upperlimb front, 3 for forelimb front, 4 -> upperlimb back, 5-> forel
         vector<object*> children;       
-        object();
+        object(int);
         //~object();
-        void draw();
+        void draw(float);
+        mat4 getTransform(float);
     
 };
 
-object::object(){
+object::object(int id){
     worldTrans = mat4(1.0f);
     scaleR = vec3(1.0f,1.0f,1.0f);
     translateR = vec3(0.0f, 0.0f, 0.0f);
     rAxisR = vec3(1.0,1.0,1.0f);
     rAngleR = 0.0f;
+    objid = id;
 }
 
-void object::draw(){
+mat4 object::getTransform(float k){
+    if( objid==0){
+        mat4 tr(1.0f);
+        tr = glm::translate(tr, vec3(k/10,2.0f*sin(glm::radians(k*100)), 0.0f));
+        // tr = glm::rotate(tr, k, vec3(0.0f, 1.0f, 0.0f));
+		return tr;
+    }
+    else if(objid==2){
+    
+        mat4 tr(1.0f);
+        tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+        // float angle = 0.523599f+k;
+        // if(angle > 0.523599f*2)
+        tr = glm::rotate(tr, 0.523599f*cos(glm::radians(k*100)), vec3(1.0f,0.0f, 0.0f ));
+        tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+        return tr;
+    }
+    else if (objid==4){
+        mat4 tr(1.0f);
+        tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+        tr = glm::rotate(tr, -0.523599f*cos(glm::radians(k*100)), vec3(1.0f,0.0f, 0.0f ));
+        tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+        return tr;
+
+    }
+    else{
+        return mat4(1.0f);
+        
+    }
+    
+}
+
+void object::draw(float k){
     mat4 model = worldTrans;
     model = glm::translate(model, translateR);
 
     if(rAngleR!=0.0f)
         model = glm::rotate(model, rAngleR, rAxisR);
+    mat4 transform = getTransform(k);
+    model*=transform;
     mat4 temp = model;
     model = glm::scale(model, scaleR);
     //model = glm::scale(model, vec3(0.5f, 0.5f, 0.5f));
     // GLfloat angle = radians(20.0f) * i*k; 
     mat4 mvp = projection*view*model;
     glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
-
     glDrawArrays(GL_TRIANGLES, 0, 36);
     for(int i=0; i< children.size(); i++){
         children[i]->worldTrans *=temp;
-        children[i]->draw();
+        children[i]->draw(k);
         children[i]->worldTrans /=temp;
     }
 }
 
-vector<object> objs;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -212,48 +247,58 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)  
     };
 
-    object obj1;
+    object obj1(0);
     obj1.scaleR = vec3(1.0f, 0.75f, 0.75f);
     //obj1.rAxisR = vec3(0.0f, 0.0f, -1.0f);
     //obj1.rAngleR = 45.0f;
-    object obj2;
+    object obj2(1);
     obj2.scaleR = vec3(0.5f, 0.5f, 0.5f);
     obj2.translateR = vec3(-0.5f, 0.375f, 0.0f);
     obj2.rAxisR = vec3(0.0f, 0.0f, -1.0f);
     obj2.rAngleR = -30.0f;
     obj1.children.push_back(&obj2);
-    object obj3;
+    object obj3(2);
     obj3.scaleR = vec3(0.1f, 0.1f,0.5f);
     obj3.translateR = vec3(-0.3f, -0.3f, 0.625f);
-    object obj4;
+    object obj4(4);
     obj4.scaleR = vec3(0.1f, 0.1f,0.5f);
     obj4.translateR = vec3(-0.3f, -0.3f, -0.625f);
     
     obj1.children.push_back(&obj3);
     obj1.children.push_back(&obj4);
     
-    object obj5;
-    obj5.scaleR = vec3(0.5f, 0.1f,0.1f);
-    obj5.translateR = vec3(-0.2f, 0.0f, 0.2f);
+    object obj5(3);
+    obj5.scaleR = vec3(0.1f, 0.5f,0.1f);
+    obj5.translateR = vec3(0.0f, -0.2f, 0.2f);
     obj3.children.push_back(&obj5);
-    object obj6;
-    obj6.scaleR = vec3(0.5f, 0.1f,0.1f);
-    obj6.translateR = vec3(-0.2f, 0.0f, -0.2f);
+    object obj6(3);
+    obj6.scaleR = vec3(0.1f, 0.5f,0.1f);
+    obj6.translateR = vec3(0.0f, -0.2f, -0.2f);
     obj4.children.push_back(&obj6);
-    object obj7;
+    object obj7(2);
     obj7.scaleR = obj3.scaleR;
     obj7.translateR = vec3(0.4f, -0.3f, 0.625f);
-    object obj8;
+    object obj8(4);
     obj8.scaleR = obj3.scaleR;
     obj8.translateR = vec3(0.4f, -0.3f, -0.625f);
     obj1.children.push_back(&obj7);
     obj1.children.push_back(&obj8);
     object obj9 = obj5;
-    obj9.translateR = vec3(0.2f, 0.0f, 0.2f);
+    obj9.objid = 5;
+    obj9.translateR = vec3(0.0f, -0.2f, 0.2f);
     obj7.children.push_back(&obj9);
     object obj10 = obj6;
-    obj10.translateR = vec3(0.2f, 0.0f, -0.2f);
+    obj10.objid = 5;
+    obj10.translateR = vec3(0.0f, -0.2f, -0.2f);
     obj8.children.push_back(&obj10);
+    object obj11(6) ;
+    obj11.scaleR = vec3(0.5f,0.1f,0.1f);
+    obj11.translateR = vec3(0.2f, -0.2f, 0.0f );
+    obj9.children.push_back(&obj11);
+    object obj12(6) ;
+    obj12.scaleR = vec3(0.5f,0.1f,0.1f);
+    obj12.translateR = vec3(0.2f, -0.2f, 0.0f );
+    obj10.children.push_back(&obj12);
 
 
 
@@ -304,6 +349,7 @@ int main()
     // Load, create texture and generate mipmaps
     int width, height;
     unsigned char* image = SOIL_load_image("textures/container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
     SOIL_free_image_data(image);
@@ -331,7 +377,7 @@ int main()
     float k=0.001;
     while (!glfwWindowShouldClose(window))
     {
-        k=k+ 0.001f;
+        k=k+ 0.005f;
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
 
@@ -406,10 +452,10 @@ int main()
         //     glDrawArrays(GL_TRIANGLES, 0, 36);
         // }
         //obj1.translateR = vec3(-k , 0.0f, 0.0f);
-        obj1.draw();
+        obj1.draw(k);
         //obj.translateR += vec3(0.0f, )
-        obj3.rAxisR = vec3(1.0f, 0.0f, 0.0f);
-        obj3.rAngleR += 0.001f;
+        // obj3.rAxisR = vec3(1.0f, 0.0f, 0.0f);
+        // obj3.rAngleR += 0.001f;
         //obj5.rAxisR = vec3(0.0f, 0.0f, -1.0f);
         //obj5.rAngleR += 0.001f;
         //obj1.rAngleR = (GLfloat)glfwGetTime() * radians(5.0f);
