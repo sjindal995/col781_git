@@ -222,17 +222,40 @@ int main()
     obj2.rAxisR = vec3(0.0f, 0.0f, -1.0f);
     obj2.rAngleR = -30.0f;
     obj1.children.push_back(&obj2);
-    // object obj3;
-    // obj3.scaleR = vec3(0.1f, 0.1f,1.5f);
-    // obj3.translateR = vec3(0.0f, -0.3f, 1.0f);
-    // //obj3.rAxisR = vec3(1.0f, 0.0f, 0.0f);
-    // //obj3.rAngleR = 45.0f;
-    // object obj4;
-    // obj4.scaleR = vec3(0.1f, 0.1f,1.0f);
-    // obj4.translateR = vec3(0.0f, -0.3f, -0.4f);
+    object obj3;
+    obj3.scaleR = vec3(0.1f, 0.1f,0.5f);
+    obj3.translateR = vec3(-0.3f, -0.3f, 0.625f);
+    object obj4;
+    obj4.scaleR = vec3(0.1f, 0.1f,0.5f);
+    obj4.translateR = vec3(-0.3f, -0.3f, -0.625f);
+    
+    obj1.children.push_back(&obj3);
+    obj1.children.push_back(&obj4);
+    
+    object obj5;
+    obj5.scaleR = vec3(0.5f, 0.1f,0.1f);
+    obj5.translateR = vec3(-0.2f, 0.0f, 0.2f);
+    obj3.children.push_back(&obj5);
+    object obj6;
+    obj6.scaleR = vec3(0.5f, 0.1f,0.1f);
+    obj6.translateR = vec3(-0.2f, 0.0f, -0.2f);
+    obj4.children.push_back(&obj6);
+    object obj7;
+    obj7.scaleR = obj3.scaleR;
+    obj7.translateR = vec3(0.4f, -0.3f, 0.625f);
+    object obj8;
+    obj8.scaleR = obj3.scaleR;
+    obj8.translateR = vec3(0.4f, -0.3f, -0.625f);
+    obj1.children.push_back(&obj7);
+    obj1.children.push_back(&obj8);
+    object obj9 = obj5;
+    obj9.translateR = vec3(0.2f, 0.0f, 0.2f);
+    obj7.children.push_back(&obj9);
+    object obj10 = obj6;
+    obj10.translateR = vec3(0.2f, 0.0f, -0.2f);
+    obj8.children.push_back(&obj10);
 
-    // obj1.children.push_back(&obj3);
-    // obj1.children.push_back(&obj4);
+
 
     // obj3
 
@@ -382,10 +405,13 @@ int main()
 
         //     glDrawArrays(GL_TRIANGLES, 0, 36);
         // }
-        //obj1.translateR = vec3(k , 0.0f, 0.0f);
+        //obj1.translateR = vec3(-k , 0.0f, 0.0f);
         obj1.draw();
-        //obj2.rAngleR += 0.001f;
-        //obj1.rAxisR = vec3(0.0f, 0.0f, -1.0f);
+        //obj.translateR += vec3(0.0f, )
+        obj3.rAxisR = vec3(1.0f, 0.0f, 0.0f);
+        obj3.rAngleR += 0.001f;
+        //obj5.rAxisR = vec3(0.0f, 0.0f, -1.0f);
+        //obj5.rAngleR += 0.001f;
         //obj1.rAngleR = (GLfloat)glfwGetTime() * radians(5.0f);
         glBindVertexArray(0);
         
