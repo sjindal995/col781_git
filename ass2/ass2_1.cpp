@@ -282,8 +282,11 @@ int main()
         if(unconvertedClick){
             unconvertedClick=false;
             vec4 temp = vec4(nextPos[0],nextPos[2],0.0f,1.0f);
+            temp[0] = (temp[0]/WIDTH * 2);
+            temp[1] = (temp[1]/HEIGHT * 2);
             temp = inverse(projection * view) * temp;
-            cout << temp[0] << " , " << temp[1] << " , " << temp[2] << " , " << temp[3] << endl;
+            cout << temp[0] << " , " << temp[1] << endl;
+            cout << "current: " << currentPos[0] << " , " << currentPos[1] << endl;
             // nextPos[0] = temp[0];
             // nextPos[1] = temp[1];
             // nextPos[2] = temp[2];
@@ -331,12 +334,12 @@ int main()
             model = glm::translate(model, cubePositions[i]);
             model *= transform;
             mvp = projection*view*model;
-            vec4 pos = projection * view * vec4(0.5f,0.5f,0.5f,1.0f);
+            vec4 pos = projection * view * vec4(0.0f,0.0f,0.0f,1.0f);
             int winX = (int)((( pos[0] + 1 ) / 2.0) *
-                                   width );
-            int winY = (int)((( 1 - pos[1] ) / 2.0) *
-                                   height );
-            cout << winX << " , " << winY << endl;
+                                   WIDTH );
+            int winY = (int)((( 1 + pos[1] ) / 2.0) *
+                                   HEIGHT );
+            // cout << winX << " , " << winY << endl;
             glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
