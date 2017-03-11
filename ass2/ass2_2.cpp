@@ -25,7 +25,12 @@ mat4 projection;
 mat4 view;
 GLint mvp_loc ;
 
-vec3 destination = vec3(10.f,0.0f,5.0f);
+vec3 destination = vec3(-10.f,0.0f,-5.0f);
+bool stop = false;
+bool going_down = true;
+bool grounded = true;
+vec3 final_pos = vec3(0.0f,0.0f,0.0f);
+float final_k = 0.0;
 
 class object
 {
@@ -54,34 +59,73 @@ object::object(int id){
 }
 
 mat4 object::getTransform(float k){
-    if( objid==0){
-        mat4 tr(1.0f);
-        vec3 dirxn = normalize(destination);
-        tr = glm::translate(tr, vec3(k/2 * dirxn[0],2.0f*abs(sin(glm::radians(k*50))), k/2*dirxn[2]));
-        tr = glm::rotate(tr, radians(180.0f) - atan(dirxn[2]/dirxn[0]), vec3(0.0f, 1.0f, 0.0f));
-		return tr;
-    }
-    else if(objid==2){
-    
-        mat4 tr(1.0f);
-        tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
-        // float angle = 0.523599f+k;
-        // if(angle > 0.523599f*2)
-        tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
-        tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
-        return tr;
-    }
-    else if (objid==4){
-        mat4 tr(1.0f);
-        tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
-        tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
-        tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
-        return tr;
+    vec3 dirxn = normalize(destination);
+    if(!stop || !grounded){
+        if( objid==0){
+            mat4 tr(1.0f);
+            tr = glm::translate(tr, vec3(k/2 * dirxn[0],2.0f*abs(sin(glm::radians(k*50))), k/2*dirxn[2]));
+            GLfloat theta = (GLfloat)atan(dirxn[2]/dirxn[0]);
+            if(dirxn[2] > 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] > 0 && dirxn[0] < 0) tr = glm::rotate(tr, -theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] < 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] < 0 && dirxn[0] < 0) tr = glm::rotate(tr, - theta, vec3(0.0f, 1.0f, 0.0f));
+            if(abs(k/2*dirxn[0]) >= abs(destination[0]) && abs(k/2*dirxn[2]) >= abs(destination[2])) stop = true;
+            if(sin(glm::radians(k*50)) < 0.01) grounded = true;
+            if(stop && grounded){
+                final_pos = vec3(k/2 * dirxn[0], 0, k/2*dirxn[2]);
+                final_k = k;
+            }
+    		return tr;
+        }
+        else if(objid==2){
+        
+            mat4 tr(1.0f);
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+            // float angle = 0.523599f+k;
+            // if(angle > 0.523599f*2)
+            tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+            return tr;
+        }
+        else if (objid==4){
+            mat4 tr(1.0f);
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+            tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+            return tr;
 
+        }
+        else{
+            return mat4(1.0f);
+            
+        }
     }
     else{
-        return mat4(1.0f);
-        
+        if(objid == 0){
+            mat4 tr(1.0f);
+            tr = glm::translate(tr, final_pos);
+            GLfloat theta = (GLfloat)atan(dirxn[2]/dirxn[0]);
+            if(dirxn[2] > 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] > 0 && dirxn[0] < 0) tr = glm::rotate(tr, -theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] < 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+            else if(dirxn[2] < 0 && dirxn[0] < 0) tr = glm::rotate(tr, - theta, vec3(0.0f, 1.0f, 0.0f));
+            return tr;
+        }
+        else if(objid == 2){
+            mat4 tr(1.0f);
+            tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+            return tr;   
+        }
+        else if(objid == 4){
+            mat4 tr(1.0f);
+            tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+            return tr;   
+        }
+        else{
+            return mat4(1.0f);
+        }
     }
     
 }
