@@ -21,6 +21,56 @@
 using namespace std;
 using namespace glm;
 
+mat4 projection;
+mat4 view;
+GLint mvp_loc ;
+
+class object
+{
+    public:
+        mat4 worldTrans;
+        vec3 scaleR;
+        vec3 translateR;
+        vec3 rAxisR;
+        GLfloat rAngleR;
+        vector<object*> children;       
+        object();
+        //~object();
+        void draw();
+    
+};
+
+object::object(){
+    worldTrans = mat4(1.0f);
+    scaleR = vec3(1.0f,1.0f,1.0f);
+    translateR = vec3(0.0f, 0.0f, 0.0f);
+    rAxisR = vec3(1.0,1.0,1.0f);
+    rAngleR = 0.0f;
+}
+
+void object::draw(){
+    mat4 model = worldTrans;
+    model = glm::translate(model, translateR);
+
+    if(rAngleR!=0.0f)
+        model = glm::rotate(model, rAngleR, rAxisR);
+    mat4 temp = model;
+    model = glm::scale(model, scaleR);
+    //model = glm::scale(model, vec3(0.5f, 0.5f, 0.5f));
+    // GLfloat angle = radians(20.0f) * i*k; 
+    mat4 mvp = projection*view*model;
+    glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for(int i=0; i< children.size(); i++){
+        children[i]->worldTrans *=temp;
+        children[i]->draw();
+        children[i]->worldTrans /=temp;
+    }
+}
+
+vector<object> objs;
+
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
@@ -33,7 +83,7 @@ void do_movement();
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  15.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 bool keys[1024];
@@ -125,28 +175,71 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
-
-    GLfloat xz_plane[] = {
-        -50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
-         50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
-        -50.0f,  -0.5f,  50.0f,  1.0f, 1.0f, 0.2f,
-        -50.0f,  -0.5f, -50.0f,  1.0f, 1.0f, 0.2f
-    };
-
     glm::vec3 cubePositions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f), 
-        // glm::vec3( 2.0f,  5.0f, -15.0f), 
-        // glm::vec3(-1.5f, -2.2f, -2.5f),  
-        // glm::vec3(-3.8f, -2.0f, -12.3f),  
-        // glm::vec3( 2.4f, -0.4f, -3.5f),  
-        // glm::vec3(-1.7f,  3.0f, -7.5f),  
-        // glm::vec3( 1.3f, -2.0f, -2.5f),  
-        // glm::vec3( 1.5f,  2.0f, -2.5f), 
-        // glm::vec3( 1.5f,  0.2f, -1.5f), 
-        // glm::vec3(-1.3f,  1.0f, -1.5f)  
+        glm::vec3( -0.75f,  0.5f,  0.0f), 
+        glm::vec3(-1.125f, 1.125f, -0.25f),  
+        glm::vec3(-1.125f, 1.125f, +0.25f),  
+        glm::vec3( 2.4f, -0.4f, -3.5f),  
+        glm::vec3(-1.7f,  3.0f, -7.5f),  
+        glm::vec3( 1.3f, -2.0f, -2.5f),  
+        glm::vec3( 1.5f,  2.0f, -2.5f), 
+        glm::vec3( 1.5f,  0.2f, -1.5f), 
+        glm::vec3(-1.3f,  1.0f, -1.5f)  
     };
+    glm::vec3 cubeScales[] = {
+        glm::vec3( 1.5f,  1.0f,  1.0f), 
+        glm::vec3( 1.0f,  1.0f,  0.75f), 
+        glm::vec3(0.25f, 0.25f, 0.25f),  
+        glm::vec3(0.25f, 0.25f, 0.25f),  
+        glm::vec3( 2.4f, -0.4f, -3.5f),  
+        glm::vec3(-1.7f,  3.0f, -7.5f),  
+        glm::vec3( 1.3f, -2.0f, -2.5f),  
+        glm::vec3( 1.5f,  2.0f, -2.5f), 
+        glm::vec3( 1.5f,  0.2f, -1.5f), 
+        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    };
+    glm::vec3 cubeRotnAxes[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f), 
+        glm::vec3( 0.0f,  0.0f,  -1.0f), 
+        glm::vec3( 0.0f,  0.0f,  0.0f), 
+        glm::vec3( 0.0f,  0.0f,  0.0f), 
+        glm::vec3( 0.0f,  0.0f,  -1.0f), 
+        glm::vec3(-1.7f,  3.0f, -7.5f),  
+        glm::vec3( 1.3f, -2.0f, -2.5f),  
+        glm::vec3( 1.5f,  2.0f, -2.5f), 
+        glm::vec3( 1.5f,  0.2f, -1.5f), 
+        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    };
+
+    object obj1;
+    obj1.scaleR = vec3(1.0f, 0.75f, 0.75f);
+    //obj1.rAxisR = vec3(0.0f, 0.0f, -1.0f);
+    //obj1.rAngleR = 45.0f;
+    object obj2;
+    obj2.scaleR = vec3(0.5f, 0.5f, 0.5f);
+    obj2.translateR = vec3(-0.5f, 0.375f, 0.0f);
+    obj2.rAxisR = vec3(0.0f, 0.0f, -1.0f);
+    obj2.rAngleR = -30.0f;
+    obj1.children.push_back(&obj2);
+    // object obj3;
+    // obj3.scaleR = vec3(0.1f, 0.1f,1.5f);
+    // obj3.translateR = vec3(0.0f, -0.3f, 1.0f);
+    // //obj3.rAxisR = vec3(1.0f, 0.0f, 0.0f);
+    // //obj3.rAngleR = 45.0f;
+    // object obj4;
+    // obj4.scaleR = vec3(0.1f, 0.1f,1.0f);
+    // obj4.translateR = vec3(0.0f, -0.3f, -0.4f);
+
+    // obj1.children.push_back(&obj3);
+    // obj1.children.push_back(&obj4);
+
+    // obj3
+
+
+
+
+
 
     GLuint VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -167,28 +260,6 @@ int main()
     // TexCoord attribute
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0); // Unbind VAO
-
-    GLuint VAO2, VBO2;
-    glGenVertexArrays(1,&VAO2);
-    glGenBuffers(1, &VBO2);
-
-    glBindVertexArray(VAO2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(xz_plane), xz_plane, GL_STATIC_DRAW);
-
-    
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
-    // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
-    // // TexCoord attribute
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    // glEnableVertexAttribArray(2);
 
     glBindVertexArray(0); // Unbind VAO
 
@@ -234,8 +305,10 @@ int main()
 
 
     // Game loop
+    float k=0.001;
     while (!glfwWindowShouldClose(window))
     {
+        k=k+ 0.001f;
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
 
@@ -261,55 +334,65 @@ int main()
         // Activate shader
         ourShader.Use();     
 
-        mat4 view;
-        mat4 projection;
+        // mat4 view;
+        // mat4 projection;
         mat4 mvp;
 
-        
+        // glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+        // glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+        // glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+        // glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
+        // glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+        // glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+        // GLfloat radius = 10.0f;
+        // GLfloat camX = sin(glfwGetTime()) * radius;
+        // GLfloat camZ = cos(glfwGetTime()) * radius;
+        // view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        // // model = glm::rotate(model, (GLfloat)glfwGetTime() * radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        // // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = glm::perspective(radians(fov), GLfloat(WIDTH) / GLfloat(HEIGHT), 0.1f, 100.0f);
 
-        GLint mvp_loc = glGetUniformLocation(ourShader.Program, "mvp");
+        mvp_loc = glGetUniformLocation(ourShader.Program, "mvp");
 
         // Create transformations
         glm::mat4 transform;
-        GLfloat radius = 5;
-        // GLfloat angle = (GLfloat)glfwGetTime() * radians(25.0f);
-        GLfloat x_translate = (GLfloat)glfwGetTime();
-        GLfloat y_translate = abs(sin(x_translate));
-        GLfloat z_translate = 0; 
-
-        transform = glm::translate(transform, glm::vec3(x_translate, y_translate, z_translate));
+        // transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
         // transform = glm::rotate(transform, (GLfloat)glfwGetTime() * radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
-        // // Get matrix's uniform location and set matrix
-        // GLint transformLoc = glGetUniformLocation(ourShader.Program, "transform");
-        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        // Get matrix's uniform location and set matrix
+        GLint transformLoc = glGetUniformLocation(ourShader.Program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
         glBindVertexArray(VAO);
-        for(GLuint i = 0; i < 1; i++)
-        {
-            mat4 model;
-            model = glm::translate(model, cubePositions[i]);
-            model *= transform;
-            GLfloat angle = radians(20.0f) * i; 
-            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-            mvp = projection*view*model;
-            glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+        // for(GLuint i = 0; i < 10; i++)
+        // for(GLuint i = 0; i < 4; i++)
+        // {
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        //     model = glm::translate(model, cubePositions[i]);
+            
+        //     if(cubeRotnAngles[i]!=0.0f)
+        //     model = glm::rotate(model, cubeRotnAngles[i], cubeRotnAxes[i]);
+        //     model = glm::scale(model, cubeScales[i]);
+        //     //model = glm::scale(model, vec3(0.5f, 0.5f, 0.5f));
+        //     // GLfloat angle = radians(20.0f) * i*k; 
+        //     mvp = projection*view*model;
+        //     glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
+        //     glDrawArrays(GL_TRIANGLES, 0, 36);
+        // }
+        //obj1.translateR = vec3(k , 0.0f, 0.0f);
+        obj1.draw();
+        //obj2.rAngleR += 0.001f;
+        //obj1.rAxisR = vec3(0.0f, 0.0f, -1.0f);
+        //obj1.rAngleR = (GLfloat)glfwGetTime() * radians(5.0f);
         glBindVertexArray(0);
-
-
-        mat4 mvp1 = projection*view;
-        // Draw container
-        glBindVertexArray(VAO2);
-
-        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp1));
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+        
+        // // Draw container
+        // glBindVertexArray(VAO);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        // glBindVertexArray(0);
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
@@ -335,14 +418,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_A)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(key == GLFW_KEY_D)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if(key == GLFW_KEY_UP)
-        cameraPos += cameraSpeed*cameraUp;
-    if(key == GLFW_KEY_DOWN)
-        cameraPos -= cameraSpeed*cameraUp;
-    if(key == GLFW_KEY_LEFT)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if(key == GLFW_KEY_RIGHT)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if(action == GLFW_PRESS)
       keys[key] = true;
