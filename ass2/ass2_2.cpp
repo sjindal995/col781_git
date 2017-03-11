@@ -228,7 +228,7 @@ int main()
     obj2.scaleR = vec3(0.5f, 0.5f, 0.5f);
     obj2.translateR = vec3(-0.5f, 0.375f, 0.0f);
     obj2.rAxisR = vec3(0.0f, 0.0f, -1.0f);
-    obj2.rAngleR = -30.0f;
+    obj2.rAngleR = glm::radians(-30.0f);
     obj1.children.push_back(&obj2);
     object obj3(2);
     obj3.scaleR = vec3(0.1f, 0.1f,0.5f);
@@ -272,7 +272,15 @@ int main()
     obj12.scaleR = vec3(0.5f,0.1f,0.1f);
     obj12.translateR = vec3(0.2f, -0.2f, 0.0f );
     obj10.children.push_back(&obj12);
-
+    //eyes
+    object obj13(7);
+    obj13.scaleR = vec3(0.1f, 0.1f, 0.1f);
+    obj13.translateR = vec3(-0.15f, 0.3f, 0.15f);
+    object obj14(7);
+    obj14.scaleR = obj13.scaleR;
+    obj14.translateR = vec3(-0.15f, 0.3f, -0.15f);
+    obj2.children.push_back(&obj13);
+    obj2.children.push_back(&obj14);
 
 
     // obj3
