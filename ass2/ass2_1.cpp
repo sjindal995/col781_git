@@ -28,6 +28,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+
 void do_movement();
 
 // Window dimensions
@@ -43,6 +45,10 @@ GLfloat lastX = 400, lastY = 300;
 GLfloat yaw0   = -90.0f; // Yaw0 is initialized to -90.0 degrees since a yaw0 of 0.0 results in a direction vector pointing to the right (due to how Eular angles work) so we initially rotate a bit to the left.
 GLfloat pitch0 =   0.0f;
 GLfloat fov = 45.0f;
+vec3 nextPos = vec3(5.0f,0.0f,0.0f);
+vec3 currentPos = vec3(0.0f,0.0f,0.0f);
+vec3 direction = vec3(1.0f,0.0f,0.0f);
+bool unconvertedClick = false;
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -63,8 +69,9 @@ int main()
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -232,6 +239,7 @@ int main()
     SOIL_free_image_data(image);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    bool going_down = false;
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -271,13 +279,43 @@ int main()
 
         GLint mvp_loc = glGetUniformLocation(ourShader.Program, "mvp");
 
+        if(unconvertedClick){
+            unconvertedClick=false;
+            vec4 temp = vec4(nextPos[0],nextPos[2],0.0f,1.0f);
+            temp = inverse(projection * view) * temp;
+            cout << temp[0] << " , " << temp[1] << " , " << temp[2] << " , " << temp[3] << endl;
+            // nextPos[0] = temp[0];
+            // nextPos[1] = temp[1];
+            // nextPos[2] = temp[2];
+        }
+
         // Create transformations
         glm::mat4 transform;
         GLfloat radius = 5;
         // GLfloat angle = (GLfloat)glfwGetTime() * radians(25.0f);
-        GLfloat x_translate = (GLfloat)glfwGetTime();
-        GLfloat y_translate = abs(sin(x_translate));
-        GLfloat z_translate = 0; 
+        GLfloat x_translate = 0.0f;
+        GLfloat y_translate = 0.0f;
+        GLfloat z_translate = 0.0f;
+
+        x_translate = currentPos[0] + deltaTime*direction[0];
+        y_translate = abs(sin(glfwGetTime()));
+        z_translate = currentPos[2] + deltaTime*direction[2];;
+
+    
+        if(going_down && (y_translate - currentPos[1] > 0)){
+            direction = normalize(nextPos - currentPos);
+            x_translate = currentPos[0] + deltaTime*direction[0];
+            y_translate = abs(sin(glfwGetTime()));
+            z_translate = currentPos[2] + deltaTime*direction[2];;
+        }
+
+        if(y_translate - currentPos[1] > 0){
+            going_down = false;
+        }
+        else{
+            going_down = true;
+        }
+        currentPos = vec3(x_translate, y_translate, z_translate);
 
         transform = glm::translate(transform, glm::vec3(x_translate, y_translate, z_translate));
         // transform = glm::rotate(transform, (GLfloat)glfwGetTime() * radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
@@ -292,9 +330,13 @@ int main()
             mat4 model;
             model = glm::translate(model, cubePositions[i]);
             model *= transform;
-            GLfloat angle = radians(20.0f) * i; 
-            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
             mvp = projection*view*model;
+            vec4 pos = projection * view * vec4(0.5f,0.5f,0.5f,1.0f);
+            int winX = (int)((( pos[0] + 1 ) / 2.0) *
+                                   width );
+            int winY = (int)((( 1 - pos[1] ) / 2.0) *
+                                   height );
+            cout << winX << " , " << winY << endl;
             glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -405,4 +447,13 @@ void do_movement()
     cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
   if(keys[GLFW_KEY_D])
     cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS){
+        nextPos[0] = lastX;
+        nextPos[2] = lastY;
+        unconvertedClick = true;
+    }
 }
