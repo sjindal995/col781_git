@@ -25,12 +25,16 @@ mat4 projection;
 mat4 view;
 GLint mvp_loc ;
 
-vec3 destination = vec3(-10.f,0.0f,-5.0f);
+vector<vec3> destinations;
 bool stop = false;
 bool going_down = true;
 bool grounded = true;
 vec3 final_pos = vec3(0.0f,0.0f,0.0f);
 float final_k = 0.0;
+int stage = 0;
+vec3 prev_dest = vec3(0.0f,0.0f,0.0f);
+vec3 curr_dest = vec3(0.0f,0.0f,0.0f);
+float prev_k = 0;
 
 class object
 {
@@ -59,21 +63,41 @@ object::object(int id){
 }
 
 mat4 object::getTransform(float k){
-    vec3 dirxn = normalize(destination);
+    vec3 dirxn = normalize(curr_dest - prev_dest);
     if(!stop || !grounded){
         if( objid==0){
             mat4 tr(1.0f);
-            tr = glm::translate(tr, vec3(k/2 * dirxn[0],2.0f*abs(sin(glm::radians(k*50))), k/2*dirxn[2]));
+            vec3 curr_pos = prev_dest + vec3((k-prev_k)/2 * dirxn[0],2.0f*abs(sin(glm::radians((k-prev_k)*50))), (k-prev_k)/2*dirxn[2]);
+            tr = glm::translate(tr, curr_pos);
             GLfloat theta = (GLfloat)atan(dirxn[2]/dirxn[0]);
             if(dirxn[2] > 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
             else if(dirxn[2] > 0 && dirxn[0] < 0) tr = glm::rotate(tr, -theta, vec3(0.0f, 1.0f, 0.0f));
             else if(dirxn[2] < 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
             else if(dirxn[2] < 0 && dirxn[0] < 0) tr = glm::rotate(tr, - theta, vec3(0.0f, 1.0f, 0.0f));
-            if(abs(k/2*dirxn[0]) >= abs(destination[0]) && abs(k/2*dirxn[2]) >= abs(destination[2])) stop = true;
-            if(sin(glm::radians(k*50)) < 0.01) grounded = true;
+
+            if(dot((curr_dest - curr_pos),(curr_dest - prev_dest)) <= 0) stop = true;
+            // if(abs(k/2*dirxn[0]) >= abs(destinations[stage][0]) && abs(k/2*dirxn[2]) >= abs(destinations[stage][2])) stop = true;
+            if(curr_pos.y <= 0.01) grounded = true;
+            else{
+                grounded = false;
+            }
             if(stop && grounded){
-                final_pos = vec3(k/2 * dirxn[0], 0, k/2*dirxn[2]);
-                final_k = k;
+                if(stage == destinations.size()-1){
+                    final_pos = curr_pos;
+                     cout << final_pos.x << "," << final_pos.y << "," << final_pos.z << endl;
+                    final_pos.y=0;
+                    final_k = k;
+                }
+                else{
+                    stop=false;
+                    prev_dest = curr_pos;
+                    // cout << prev_dest.x << "," << prev_dest.y << "," << prev_dest.z << endl;
+                    prev_dest.y = 0;
+                    stage++;
+                    curr_dest = destinations[stage];
+                    prev_k = k;
+
+                }
             }
     		return tr;
         }
@@ -113,13 +137,15 @@ mat4 object::getTransform(float k){
         }
         else if(objid == 2){
             mat4 tr(1.0f);
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
             tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
             tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
             return tr;   
         }
         else if(objid == 4){
             mat4 tr(1.0f);
-            tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
+            tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+            tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
             tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
             return tr;   
         }
@@ -179,6 +205,10 @@ GLfloat fov = 45.0f;
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
+    destinations.push_back(vec3(10.0f,0.0f,10.0f));
+    destinations.push_back(vec3(-10.0f,0.0f,10.0f));
+    destinations.push_back(vec3(10.0f,0.0f,10.0f));
+    curr_dest = destinations[0];
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
