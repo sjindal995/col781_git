@@ -48,7 +48,163 @@ GLfloat lastX = 400, lastY = 300;
 GLfloat yaw0   = -90.0f; // Yaw0 is initialized to -90.0 degrees since a yaw0 of 0.0 results in a direction vector pointing to the right (due to how Eular angles work) so we initially rotate a bit to the left.
 GLfloat pitch0 =   0.0f;
 GLfloat fov = 45.0f;
-int numFaces = 6;
+int numFaces = 20;
+int trunkobjs =66;
+GLfloat skew = 0.95f;
+
+class object
+{
+    public:
+        mat4 worldTrans;
+        vec3 scaleR;
+        vec3 translateR;
+        vec3 rAxisR;
+        GLfloat rAngleR;
+        // int objid;  //0 for body, 1 for head, 2 for upperlimb front, 3 for forelimb front, 4 -> upperlimb back, 5-> forel
+        vector<object*> children;       
+        object(int);
+        //~object();
+        void draw(float);
+        // mat4 getTransform(float);
+    
+};
+
+vector<object> objs;
+
+object::object(int id){
+    worldTrans = mat4(1.0f);
+    scaleR = vec3(1.0f,1.0f,1.0f);
+    translateR = vec3(0.0f, 0.0f, 0.0f);
+    rAxisR = vec3(1.0,1.0,1.0f);
+    rAngleR = 0.0f;
+    // objid = id;
+}
+
+// mat4 object::getTransform(float k){
+//     vec3 dirxn = normalize(curr_dest - prev_dest);
+//     if(!stop || !grounded){
+//         if( objid==0){
+//             mat4 tr(1.0f);
+//             vec3 curr_pos = prev_dest + vec3((k-prev_k)/2 * dirxn[0],2.0f*abs(sin(glm::radians((k-prev_k)*50))), (k-prev_k)/2*dirxn[2]);
+//             tr = glm::translate(tr, curr_pos);
+//             GLfloat theta = (GLfloat)atan(dirxn[2]/dirxn[0]);
+//             if(dirxn[2] > 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] > 0 && dirxn[0] < 0) tr = glm::rotate(tr, -theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] < 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] < 0 && dirxn[0] < 0) tr = glm::rotate(tr, - theta, vec3(0.0f, 1.0f, 0.0f));
+
+//             if(dot((curr_dest - curr_pos),(curr_dest - prev_dest)) <= 0) stop = true;
+//             // if(abs(k/2*dirxn[0]) >= abs(destinations[stage][0]) && abs(k/2*dirxn[2]) >= abs(destinations[stage][2])) stop = true;
+//             if(curr_pos.y <= 0.01) grounded = true;
+//             else{
+//                 grounded = false;
+//             }
+//             if(stop && grounded){
+//                 if(stage == destinations.size()-1){
+//                     final_pos = curr_pos;
+//                      cout << final_pos.x << "," << final_pos.y << "," << final_pos.z << endl;
+//                     final_pos.y=0;
+//                     final_k = k;
+//                 }
+//                 else{
+//                     stop=false;
+//                     prev_dest = curr_pos;
+//                     // cout << prev_dest.x << "," << prev_dest.y << "," << prev_dest.z << endl;
+//                     prev_dest.y = 0;
+//                     stage++;
+//                     curr_dest = destinations[stage];
+//                     prev_k = k;
+
+//                 }
+//             }
+//             return tr;
+//         }
+//         else if(objid==2){
+        
+//             mat4 tr(1.0f);
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+//             // float angle = 0.523599f+k;
+//             // if(angle > 0.523599f*2)
+//             tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+//             return tr;
+//         }
+//         else if (objid==4){
+//             mat4 tr(1.0f);
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+//             tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*k*50)), vec3(1.0f,0.0f, 0.0f ));
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+//             return tr;
+
+//         }
+//         else{
+//             return mat4(1.0f);
+            
+//         }
+//     }
+//     else{
+//         if(objid == 0){
+//             mat4 tr(1.0f);
+//             tr = glm::translate(tr, final_pos);
+//             GLfloat theta = (GLfloat)atan(dirxn[2]/dirxn[0]);
+//             if(dirxn[2] > 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] > 0 && dirxn[0] < 0) tr = glm::rotate(tr, -theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] < 0 && dirxn[0] > 0) tr = glm::rotate(tr, radians(180.0f) - theta, vec3(0.0f, 1.0f, 0.0f));
+//             else if(dirxn[2] < 0 && dirxn[0] < 0) tr = glm::rotate(tr, - theta, vec3(0.0f, 1.0f, 0.0f));
+//             return tr;
+//         }
+//         else if(objid == 2){
+//             mat4 tr(1.0f);
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+//             tr = glm::rotate(tr, 0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+//             return tr;   
+//         }
+//         else if(objid == 4){
+//             mat4 tr(1.0f);
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, 0.25f)  );
+//             tr = glm::rotate(tr, -0.523599f*cos(glm::radians(2*final_k*50)), vec3(1.0f,0.0f, 0.0f ));
+//             tr = glm::translate(tr, vec3(0.0f, 0.0f, -0.25f)  );
+//             return tr;   
+//         }
+//         else{
+//             return mat4(1.0f);
+//         }
+//     }
+    
+// }
+
+void object::draw(float k){
+    mat4 model = worldTrans;
+    GLfloat yskew = scaleR.y;
+    model = glm::translate(model, vec3(translateR.x, translateR.y*yskew, translateR.z) );
+    if(rAngleR!=0.0f){
+        model = glm::translate(model, vec3(0.0f, -0.5*yskew, 0.0f));
+        model = glm::rotate(model, rAngleR, rAxisR);
+        model = glm::translate(model, vec3(0.0f, 0.5f*yskew, 0.0f));
+    }
+    //mat4 transform = getTransform(k);
+    //model*=transform;
+    mat4 temp = model;
+    model = glm::scale(model, scaleR);
+    //model = glm::scale(model, vec3(0.5f, 0.5f, 0.5f));
+    // GLfloat angle = radians(20.0f) * i*k; 
+    mat4 mvp = projection*view*model;
+    glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+    glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
+    for(int i=0; i< children.size(); i++){
+        children[i]->worldTrans *=temp;
+        children[i]->scaleR = vec3(children[i]->scaleR.x*scaleR.x, children[i]->scaleR.y*scaleR.y, children[i]->scaleR.z*scaleR.z); 
+        children[i]->draw(k);
+        children[i]->worldTrans /=temp;
+        children[i]->scaleR = vec3(children[i]->scaleR.x/scaleR.x, children[i]->scaleR.y/scaleR.y, children[i]->scaleR.z/scaleR.z); 
+    }
+}
+
+
+
+
+
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -88,34 +244,51 @@ int main()
 
 
     // Set up vertex data (and buffer(s)) and attribute pointers
-    GLfloat vertices[3*6*numFaces];
+    GLfloat vertices[5*6*numFaces];
     GLfloat rad60 = glm::radians(60.0f);
     GLfloat theta = 0.0f;
     GLfloat delta = 360.0f/numFaces;
+    //GLfloat skew = 0.95f;
     for(int i=0;i<numFaces;i++){
-        vertices[18*i] = 1.0f*cos(glm::radians(theta));
-        vertices[18*i+1] = -0.5f;
-        vertices[18*i+2] = -1.0f*sin(glm::radians(theta));
+        vertices[30*i] = 1.0f*cos(glm::radians(theta));
+        vertices[30*i+1] = -0.5f;
+        vertices[30*i+2] = -1.0f*sin(glm::radians(theta));
+        vertices[30*i+3] = 0.0f;
+        vertices[30*i+4] =0.0f;
 
-        vertices[18*i+3] = 1.0f*cos(glm::radians(theta));
-        vertices[18*i+4] = 0.5f;
-        vertices[18*i+5] = -1.0f*sin(glm::radians(theta));
 
-        vertices[18*i+6] = 1.0f*cos(glm::radians(theta+delta));
-        vertices[18*i+7] = 0.5f;
-        vertices[18*i+8] = -1.0f*sin(glm::radians(theta+delta));
+        vertices[30*i+5] = skew*1.0f*cos(glm::radians(theta));
+        vertices[30*i+6] = 0.5f;
+        vertices[30*i+7] = skew*-1.0f*sin(glm::radians(theta));
+        vertices[30*i+8] = 0.0f;
+        vertices[30*i+9] = 1.0f;
 
-        vertices[18*i+9] = 1.0f*cos(glm::radians(theta+delta));
-        vertices[18*i+10] = 0.5f;
-        vertices[18*i+11] = -1.0f*sin(glm::radians(theta+delta));
 
-        vertices[18*i+12] = 1.0f*cos(glm::radians(theta+delta));
-        vertices[18*i+13] = -0.5f;
-        vertices[18*i+14] = -1.0f*sin(glm::radians(theta+delta));
+        vertices[30*i+10] = skew*1.0f*cos(glm::radians(theta+delta));
+        vertices[30*i+11] = 0.5f;
+        vertices[30*i+12] = skew*-1.0f*sin(glm::radians(theta+delta));
+        vertices[30*i+13] = 1.0f;
+        vertices[30*i+14] = 1.0f;
 
-        vertices[18*i+15] = 1.0f*cos(glm::radians(theta));
-        vertices[18*i+16] = -0.5f;
-        vertices[18*i+17] = -1.0f*sin(glm::radians(theta));
+        vertices[30*i+15] = skew*1.0f*cos(glm::radians(theta+delta));
+        vertices[30*i+16] = 0.5f;
+        vertices[30*i+17] = skew*-1.0f*sin(glm::radians(theta+delta));
+        vertices[30*i+18] = 1.0f;
+        vertices[30*i+19] = 1.0f;
+
+        vertices[30*i+20] = 1.0f*cos(glm::radians(theta+delta));
+        vertices[30*i+21] = -0.5f;
+        vertices[30*i+22] = -1.0f*sin(glm::radians(theta+delta));
+        vertices[30*i+23] = 1.0f;
+        vertices[30*i+24] = 0.0f;
+
+
+        vertices[30*i+25] = 1.0f*cos(glm::radians(theta));
+        vertices[30*i+26] = -0.5f;
+        vertices[30*i+27] = -1.0f*sin(glm::radians(theta));
+        vertices[30*i+28] = 0.0f;
+        vertices[30*i+29] = 0.0f;
+
 
         theta += delta;
     }
@@ -163,18 +336,159 @@ int main()
 
     
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     // // // Color attribute
     // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     // glEnableVertexAttribArray(1);
     // TexCoord attribute
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    // glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0); // Unbind VAO
 
-    
+    //texture code
+    GLuint texture1;
+    // GLuint texture2;
+    // ====================
+    // Texture 1
+    // ====================
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
+    // Set our texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // Set texture wrapping to GL_REPEAT
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Set texture filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Load, create texture and generate mipmaps
+    int width, height;
+    unsigned char* image = SOIL_load_image("textures/bark.png", &width, &height, 0, SOIL_LOAD_RGB);
+    // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(image);
+    glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
+    // // ===================
+    // // Texture 2
+    // // ===================
+    // glGenTextures(1, &texture2);
+    // glBindTexture(GL_TEXTURE_2D, texture2);
+    // // Set our texture parameters
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // // Set texture filtering
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // // Load, create texture and generate mipmaps
+    // image = SOIL_load_image("textures/frog1.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+    // SOIL_free_image_data(image);
+    // glBindTexture(GL_TEXTURE_2D, 0);
+
+
+
+
+    vec3 scaleglob =vec3(skew, skew, skew);
+    //object obj2;
+    for(int kk=0; kk<trunkobjs; kk++){
+        object obj(0);
+        obj.scaleR = scaleglob;
+        obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+        obj.rAxisR =vec3(0.0f, 0.0f, 1.0f);
+        obj.rAngleR = glm::radians( (12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+        if(kk==0) obj.rAngleR = 0.0f;
+        // obj 
+        // if(kk!=0) objs[kk-1].children.push_back()
+        // obj2 = obj;
+        objs.push_back(obj);
+    }
+    for(int kk=0; kk<trunkobjs-1; kk++){
+        objs[kk].children.push_back(&objs[kk+1]);
+    }
+    object* branchnode = &objs[10];
+    for(int kk=0; kk<20; kk++){
+        object obj(0);
+        if(kk==0) {
+            obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
+            obj.translateR = vec3(0.3f, 0.3f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians(-45.0f);
+        }
+        else {
+            obj.scaleR = scaleglob;
+            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+            //obj.rAngleR = glm::radians(-25.0f);
+        }
+        objs.push_back(obj);
+        branchnode->children.push_back(&objs[objs.size()-1]);    
+        cout<<kk<<" branchnode "<<branchnode->children.size()<<endl;
+        branchnode = &objs[objs.size()-1];
+    }
+    object* branchnode2 = &objs[80];
+    for(int kk=0; kk<16; kk++){
+        object obj(0);
+        if(kk==0) {
+            obj.scaleR = scaleglob * 0.5f;
+            obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians(45.0f);
+        }
+        else {
+            obj.scaleR = scaleglob;
+            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+            //obj.rAngleR = glm::radians(-25.0f);
+        }
+        cout<<"here"<<endl;
+        objs.push_back(obj);
+        cout<<"here1: " << objs.size()<<endl;
+		object* ob = &objs[objs.size()-1];
+        cout<<"here2"<<endl;
+		cout<<branchnode2->children.size()<<endl;
+
+        branchnode2->children.push_back(ob);    
+        cout<<kk<<" branchnode2 "<<branchnode2->children.size()<<endl;
+        branchnode2 = ob;
+        //if(branchnode2->children) cout<<"null bc"<<endl;
+    }
+
+    object* branchnode3 = &objs[20];
+    for(int kk=0; kk<20; kk++){
+        object obj(0);
+        if(kk==0) {
+            obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
+            obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians(45.0f);
+        }
+        else {
+            obj.scaleR = scaleglob;
+            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+            //obj.rAngleR = glm::radians(-25.0f);
+        }
+        cout<<"here"<<endl;
+        objs.push_back(obj);
+        cout<<"here1: " << objs.size()<<endl;
+        object* ob = &objs[objs.size()-1];
+        cout<<"here2"<<endl;
+        cout<<branchnode3->children.size()<<endl;
+
+        branchnode3->children.push_back(ob);    
+        cout<<kk<<" branchnode3 "<<branchnode3->children.size()<<endl;
+        branchnode3 = ob;
+        //if(branchnode2->children) cout<<"null bc"<<endl;
+    }
+
+
+    cout<<"no children"<<endl;
+	for(int i=0; i<objs.size(); i++) cout<<i<<" "<<objs[i].children.size()<<endl;    
     // Game loop
     float k=0.001;
     while (!glfwWindowShouldClose(window))
@@ -193,6 +507,13 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //use texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture1"), 0);
+        // glActiveTexture(GL_TEXTURE1);
+        // glBindTexture(GL_TEXTURE_2D, texture2);
+        // glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture2"), 1);  
 
         // Activate shader
         ourShader.Use();     
@@ -215,8 +536,19 @@ int main()
         glBindVertexArray(VAO);
     	glm::mat4 transform;
     	mvp = projection*view*transform;
-        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
-    	glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
+        objs[0].draw(0);
+   //      glm::mat4 mvp2 = mvp;
+   //      for(int kk=0; kk<5; kk++){
+   //          glUniformMatrix4fv(mvp_loc
+			// , 1, GL_FALSE, glm::value_ptr(mvp2));
+   //          mvp2 = glm::translate(mvp2, vec3(0.0f, 0.8f, 0.0f));    
+   //          // GLfloat angle = float(rand())/float(RAND_MAX);
+			// GLfloat angle=1.0f;    
+   //          // mvp2 = glm::rotate(mvp2,glm::radians(5.0f*angle), vec3(0.0f, 0.0f, 1.0f)); 
+			// mvp2 = glm::scale(mvp2, vec3(0.95f, 1.0f, 0.95f));       
+   //      	glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
+   //      }
+
         glBindVertexArray(0);
         
         
