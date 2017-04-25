@@ -49,8 +49,9 @@ GLfloat yaw0   = -90.0f; // Yaw0 is initialized to -90.0 degrees since a yaw0 of
 GLfloat pitch0 =   0.0f;
 GLfloat fov = 45.0f;
 int numFaces = 20;
-int trunkobjs =66;
+int trunkobjs =40;
 GLfloat skew = 0.95f;
+vec3 scaleglob =vec3(skew, skew, skew);
 
 class object
 {
@@ -60,7 +61,7 @@ class object
         vec3 translateR;
         vec3 rAxisR;
         GLfloat rAngleR;
-        // int objid;  //0 for body, 1 for head, 2 for upperlimb front, 3 for forelimb front, 4 -> upperlimb back, 5-> forel
+        int objid;  //0 for body, 1 for head, 2 for upperlimb front, 3 for forelimb front, 4 -> upperlimb back, 5-> forel
         vector<object*> children;       
         object(int);
         //~object();
@@ -77,7 +78,7 @@ object::object(int id){
     translateR = vec3(0.0f, 0.0f, 0.0f);
     rAxisR = vec3(1.0,1.0,1.0f);
     rAngleR = 0.0f;
-    // objid = id;
+    objid = id;
 }
 
 // mat4 object::getTransform(float k){
@@ -175,6 +176,8 @@ object::object(int id){
 // }
 
 void object::draw(float k){
+    //cout << "aaaaaaaaaaaa: " << objs[0].children[0]->children[0]->objid << endl;
+    //cout << "objid: " << objid  << endl;
     mat4 model = worldTrans;
     GLfloat yskew = scaleR.y;
     model = glm::translate(model, vec3(translateR.x, translateR.y*yskew, translateR.z) );
@@ -193,14 +196,50 @@ void object::draw(float k){
     glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
     glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
     for(int i=0; i< children.size(); i++){
+        //cout << "children: " << i << ", objid: " << children[i]->objid << endl;
         children[i]->worldTrans *=temp;
-        children[i]->scaleR = vec3(children[i]->scaleR.x*scaleR.x, children[i]->scaleR.y*scaleR.y, children[i]->scaleR.z*scaleR.z); 
-        children[i]->draw(k);
+        children[i]->scaleR = vec3(children[i]->scaleR.x*scaleR.x, children[i]->scaleR.y*scaleR.y, children[i]->scaleR.z*scaleR.z);
+        children[i]->draw(children[i]->objid);
         children[i]->worldTrans /=temp;
         children[i]->scaleR = vec3(children[i]->scaleR.x/scaleR.x, children[i]->scaleR.y/scaleR.y, children[i]->scaleR.z/scaleR.z); 
     }
+    // cout << "drawn" << endl;
 }
 
+
+void addBranch(object* parent, int noObjs, vec3 translate, vec3 axis, GLfloat angle, GLfloat scale ){
+    object* par = parent;
+
+    for(int kk=0; kk<noObjs; kk++){
+        // object obj(offset+kk);
+        object obj(0);
+        if(kk==0) {
+            obj.scaleR = vec3(scaleglob.x * scale, scaleglob.y, scaleglob.z*scale);
+            // obj.translateR = vec3(0.3f, 0.3f, 0.0f);
+            obj.translateR = translate;
+            obj.rAxisR = axis;
+            obj.rAngleR = angle;
+        }
+        else {
+            obj.scaleR = scaleglob;
+            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+            //obj.rAngleR = glm::radians(-25.0f);
+        }
+        // cout << "here0" << endl;
+        objs.push_back(obj);
+        // cout << "here1: " << objs.size() << endl;
+        par->children.push_back(&objs[objs.size()-1]);    
+        // cout << "here2" << endl;
+        // cout<<kk<<" par "<<par->children.size()<<endl;
+        // if(par->children.size() > 0){
+        //     cout << "aaaaaaaaa: " << par->objid << ", " << par->children[0]->objid << endl; 
+        // }
+        par = &objs[objs.size()-1];
+        // cout << "here3: " << endl;
+    }
+}
 
 
 
@@ -209,6 +248,7 @@ void object::draw(float k){
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
+    objs.reserve(1000);
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -363,7 +403,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Load, create texture and generate mipmaps
     int width, height;
-    unsigned char* image = SOIL_load_image("textures/bark.png", &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image("textures/bark.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -390,9 +430,9 @@ int main()
 
 
 
-    vec3 scaleglob =vec3(skew, skew, skew);
     //object obj2;
     for(int kk=0; kk<trunkobjs; kk++){
+        // object obj(kk);
         object obj(0);
         obj.scaleR = scaleglob;
         obj.translateR = vec3(0.0f, 0.9f, 0.0f);
@@ -405,15 +445,19 @@ int main()
         objs.push_back(obj);
     }
     for(int kk=0; kk<trunkobjs-1; kk++){
-        objs[kk].children.push_back(&objs[kk+1]);
+        (&objs[kk])->children.push_back(&objs[kk+1]);
     }
+    
     object* branchnode = &objs[10];
-    for(int kk=0; kk<20; kk++){
+    int offset = objs.size();
+    int branch1_objs = 20;
+    for(int kk=0; kk<branch1_objs; kk++){
+        // object obj(offset+kk);
         object obj(0);
         if(kk==0) {
             obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
             obj.translateR = vec3(0.3f, 0.3f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+            obj.rAxisR = vec3(0.5f, 0.0f, 1.0f);
             obj.rAngleR = glm::radians(-45.0f);
         }
         else {
@@ -423,71 +467,86 @@ int main()
             obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
             //obj.rAngleR = glm::radians(-25.0f);
         }
+        cout << "here0" << endl;
         objs.push_back(obj);
-        branchnode->children.push_back(&objs[objs.size()-1]);    
-        cout<<kk<<" branchnode "<<branchnode->children.size()<<endl;
-        branchnode = &objs[objs.size()-1];
+        cout << "here1: " << objs.size() << endl;
+        // branchnode->children.push_back(&objs[objs.size()-1]);    
+        // cout << "here2" << endl;
+        // cout<<kk<<" branchnode "<<branchnode->children.size()<<endl;
+        // if(branchnode->children.size() > 0){
+        //     cout << "aaaaaaaaa: " << branchnode->objid << ", " << branchnode->children[0]->objid << endl; 
+        // }
+        // branchnode = &objs[objs.size()-1];
+        // cout << "here3: " << endl;
     }
-    object* branchnode2 = &objs[80];
-    for(int kk=0; kk<16; kk++){
-        object obj(0);
-        if(kk==0) {
-            obj.scaleR = scaleglob * 0.5f;
-            obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians(45.0f);
-        }
-        else {
-            obj.scaleR = scaleglob;
-            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
-            //obj.rAngleR = glm::radians(-25.0f);
-        }
-        cout<<"here"<<endl;
-        objs.push_back(obj);
-        cout<<"here1: " << objs.size()<<endl;
-		object* ob = &objs[objs.size()-1];
-        cout<<"here2"<<endl;
-		cout<<branchnode2->children.size()<<endl;
-
-        branchnode2->children.push_back(ob);    
-        cout<<kk<<" branchnode2 "<<branchnode2->children.size()<<endl;
-        branchnode2 = ob;
-        //if(branchnode2->children) cout<<"null bc"<<endl;
+    (&objs[10])->children.push_back(&objs[offset]);
+    for(int kk=0; kk<branch1_objs-1; kk++){
+        (&objs[offset + kk])->children.push_back(&objs[offset + kk+1]);
     }
+    addBranch(&objs[15], 25, vec3(0.3f, 0.2f, 0.0f), vec3(0.2f, 0.2f, 0.5f), glm::radians(-30.0f), 0.3f);
+    addBranch(&objs[50], 16, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.0f, 1.0f), glm::radians(45.0f), 0.5f);
+    //addBranch(&objs[90], 10, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.0f, 1.0f), glm::radians(100.0f), 0.3f);
 
-    object* branchnode3 = &objs[20];
-    for(int kk=0; kk<20; kk++){
-        object obj(0);
-        if(kk==0) {
-            obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
-            obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians(45.0f);
-        }
-        else {
-            obj.scaleR = scaleglob;
-            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
-            //obj.rAngleR = glm::radians(-25.0f);
-        }
-        cout<<"here"<<endl;
-        objs.push_back(obj);
-        cout<<"here1: " << objs.size()<<endl;
-        object* ob = &objs[objs.size()-1];
-        cout<<"here2"<<endl;
-        cout<<branchnode3->children.size()<<endl;
+  //   object* branchnode2 = &objs[50];
+  //   for(int kk=0; kk<16; kk++){
+  //       object obj(0);
+  //       if(kk==0) {
+  //           obj.scaleR = scaleglob * 0.5f;
+  //           obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
+  //           obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+  //           obj.rAngleR = glm::radians(45.0f);
+  //       }
+  //       else {
+  //           obj.scaleR = scaleglob;
+  //           obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+  //           obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+  //           obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+  //           //obj.rAngleR = glm::radians(-25.0f);
+  //       }
+  //       cout<<"here"<<endl;
+  //       objs.push_back(obj);
+  //       cout<<"here1: " << objs.size()<<endl;
+        // object* ob = &objs[objs.size()-1];
+  //       cout<<"here2"<<endl;
+        // cout<<branchnode2->children.size()<<endl;
 
-        branchnode3->children.push_back(ob);    
-        cout<<kk<<" branchnode3 "<<branchnode3->children.size()<<endl;
-        branchnode3 = ob;
-        //if(branchnode2->children) cout<<"null bc"<<endl;
-    }
+  //       branchnode2->children.push_back(ob);    
+  //       cout<<kk<<" branchnode2 "<<branchnode2->children.size()<<endl;
+  //       branchnode2 = ob;
+  //       //if(branchnode2->children) cout<<"null bc"<<endl;
+  //   }
+    
+    addBranch(&objs[20], 20, vec3(-0.1f, 0.3f, 0.0f), vec3(0.4f, 0.3f, 1.0f), glm::radians(45.0f), 0.5f);
+    // object* branchnode3 = &objs[20];
+    // for(int kk=0; kk<20; kk++){
+    //     object obj(0);
+    //     if(kk==0) {
+    //         obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
+    //         obj.translateR = vec3(-0.1f, 0.3f, 0.0f);
+    //         obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+    //         obj.rAngleR = glm::radians(45.0f);
+    //     }
+    //     else {
+    //         obj.scaleR = scaleglob;
+    //         obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+    //         obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+    //         obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+    //         //obj.rAngleR = glm::radians(-25.0f);
+    //     }
+    //     cout<<"here"<<endl;
+    //     objs.push_back(obj);
+    //     cout<<"here1: " << objs.size()<<endl;
+    //     object* ob = &objs[objs.size()-1];
+    //     cout<<"here2"<<endl;
+    //     cout<<branchnode3->children.size()<<endl;
+
+    //     branchnode3->children.push_back(ob);    
+    //     cout<<kk<<" branchnode3 "<<branchnode3->children.size()<<endl;
+    //     branchnode3 = ob;
+    //     //if(branchnode2->children) cout<<"null bc"<<endl;
+    // }
 
 
-    cout<<"no children"<<endl;
 	for(int i=0; i<objs.size(); i++) cout<<i<<" "<<objs[i].children.size()<<endl;    
     // Game loop
     float k=0.001;
