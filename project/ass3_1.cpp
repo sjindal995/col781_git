@@ -71,6 +71,7 @@ class object
 };
 
 vector<object> objs;
+vector<object> leaves;
 
 object::object(int id){
     worldTrans = mat4(1.0f);
@@ -193,13 +194,19 @@ void object::draw(float k){
     //model = glm::scale(model, vec3(0.5f, 0.5f, 0.5f));
     // GLfloat angle = radians(20.0f) * i*k; 
     mat4 mvp = projection*view*model;
-    glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
-    glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
+    if(objid==k){     
+        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+        if(objid==0) glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
+        else glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    // glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+    // glDrawArrays(GL_TRIANGLES, 0, 6*numFaces);
     for(int i=0; i< children.size(); i++){
         //cout << "children: " << i << ", objid: " << children[i]->objid << endl;
         children[i]->worldTrans *=temp;
         children[i]->scaleR = vec3(children[i]->scaleR.x*scaleR.x, children[i]->scaleR.y*scaleR.y, children[i]->scaleR.z*scaleR.z);
-        children[i]->draw(children[i]->objid);
+        // children[i]->draw(children[i]->objid);
+        children[i]->draw(k);
         children[i]->worldTrans /=temp;
         children[i]->scaleR = vec3(children[i]->scaleR.x/scaleR.x, children[i]->scaleR.y/scaleR.y, children[i]->scaleR.z/scaleR.z); 
     }
@@ -207,7 +214,10 @@ void object::draw(float k){
 }
 
 
-void addBranch(object* parent, int noObjs, vec3 translate, vec3 axis, GLfloat angle, GLfloat scale ){
+void addBranch(object* parent, int noObjs, vec3 translate, vec3 axis, GLfloat angle, GLfloat scale , int addLeaves){
+    if(parent->objid!=0) return;
+
+    translate = vec3(0.0f, 0.0f, 0.0f);
     object* par = parent;
 
     for(int kk=0; kk<noObjs; kk++){
@@ -236,7 +246,32 @@ void addBranch(object* parent, int noObjs, vec3 translate, vec3 axis, GLfloat an
         // if(par->children.size() > 0){
         //     cout << "aaaaaaaaa: " << par->objid << ", " << par->children[0]->objid << endl; 
         // }
+
+        if(kk>2 && addLeaves==1){
+            //leaves
+            object obj2(1);
+            obj2.scaleR = vec3(scaleglob.x*1.5, scaleglob.y*1.5, scaleglob.z*1.5);
+            obj2.translateR = vec3(0.1f, 0.0f, 0.0f);
+            obj2.rAxisR = vec3(0.0f, 0.5f, 0.5f);
+            GLfloat tangle= GLfloat(float(rand())/float(RAND_MAX))*60.0f + 30.0f;
+            // GLfloat tangle = (45.0f);
+            obj2.rAngleR = glm::radians(tangle);
+            // objs.push_back(obj2);
+            leaves.push_back(obj2);
+            par->children.push_back(&leaves[leaves.size()-1]);
+            object obj3(1);
+            obj3.scaleR = vec3(scaleglob.x*1.5, scaleglob.y*1.5, scaleglob.z*1.5);
+            obj3.translateR = vec3(-0.1f, 0.0f, 0.0f);
+            obj3.rAxisR = vec3(0.0f, 0.5f, 0.5f);
+            obj3.rAngleR = glm::radians(tangle*(-1));
+            leaves.push_back(obj3);
+            par->children.push_back(&leaves[leaves.size()-1]);
+            // par = &objs[objs.size()-3];
+        }
+
         par = &objs[objs.size()-1];
+
+        // par = &objs[objs.size()-1];
         // cout << "here3: " << endl;
     }
 }
@@ -249,6 +284,7 @@ void addBranch(object* parent, int noObjs, vec3 translate, vec3 axis, GLfloat an
 int main()
 {
     objs.reserve(1000);
+    leaves.reserve(1000);
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -294,7 +330,7 @@ int main()
         vertices[30*i+1] = -0.5f;
         vertices[30*i+2] = -1.0f*sin(glm::radians(theta));
         vertices[30*i+3] = 0.0f;
-        vertices[30*i+4] =0.0f;
+        vertices[30*i+4] =0.01f;
 
 
         vertices[30*i+5] = skew*1.0f*cos(glm::radians(theta));
@@ -307,27 +343,27 @@ int main()
         vertices[30*i+10] = skew*1.0f*cos(glm::radians(theta+delta));
         vertices[30*i+11] = 0.5f;
         vertices[30*i+12] = skew*-1.0f*sin(glm::radians(theta+delta));
-        vertices[30*i+13] = 1.0f;
+        vertices[30*i+13] = 0.49f;
         vertices[30*i+14] = 1.0f;
 
         vertices[30*i+15] = skew*1.0f*cos(glm::radians(theta+delta));
         vertices[30*i+16] = 0.5f;
         vertices[30*i+17] = skew*-1.0f*sin(glm::radians(theta+delta));
-        vertices[30*i+18] = 1.0f;
+        vertices[30*i+18] = 0.49f;
         vertices[30*i+19] = 1.0f;
 
         vertices[30*i+20] = 1.0f*cos(glm::radians(theta+delta));
         vertices[30*i+21] = -0.5f;
         vertices[30*i+22] = -1.0f*sin(glm::radians(theta+delta));
-        vertices[30*i+23] = 1.0f;
-        vertices[30*i+24] = 0.0f;
+        vertices[30*i+23] = 0.49f;
+        vertices[30*i+24] = 0.01f;
 
 
         vertices[30*i+25] = 1.0f*cos(glm::radians(theta));
         vertices[30*i+26] = -0.5f;
         vertices[30*i+27] = -1.0f*sin(glm::radians(theta));
         vertices[30*i+28] = 0.0f;
-        vertices[30*i+29] = 0.0f;
+        vertices[30*i+29] = 0.01f;
 
 
         theta += delta;
@@ -337,33 +373,16 @@ int main()
         cout << vertices[3*i] << "," << vertices[3*i+1] << "," << vertices[3*i+2] << endl;
     }
 
+    GLfloat leaf_vertices[] = {
+        -1.0f, 0.0f, 0.0f, 0.5f, 0.5f,
+        0.0f, 1.0f, 0.0f, 0.75f, 1.0f,
+        1.0f, 0.0f, 0.0f, 1.0f, 0.5f,
 
-	// GLfloat vertices[] = {
-	//    1.0f, -1.0f, 0.0f,
- //       -1.0f, -1.0f, 0.0f,
-	//    -1.0f,  1.0f, 0.0f,
+        1.0f,  0.0f, 0.0f, 1.0f, 0.5f,     
+        -1.0f, 0.0f, 0.0f, 0.5f, 0.5f,
+        0.0f, -1.0f, 0.0f, 0.75f, 0.0f
+    };
 
-	//    -1.0f,  1.0f, 0.0f,	   
-	// 	1.0f, -1.0f, 0.0f,
-	// 	1.0f,  1.0f, 0.0f,
-	// };
-
-    // GLfloat vertices1[] = {
-    //     1.0,-0.5,0.0,
-    //     1.0,0.5,0.0,
-    //     0.5,0.5,-0.866025,
-    //     0.5,0.5,-0.866025,
-    //     0.5,-0.5,-0.866025,
-    //     1.0,-0.5,0.0
-    // };
-
-    // GLfloat vertices2[18];
-    // for(int i=0;i<6;i++){
-    //     vertices2[(3*i)+0] = vertices[(3*i) + 0];
-    //     vertices2[(3*i)+1] = vertices[(3*i) + 1];
-    //     vertices2[(3*i)+2] = vertices[(3*i) + 2];
-    // }
-    
     
     GLuint VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -387,6 +406,30 @@ int main()
 
     glBindVertexArray(0); // Unbind VAO
 
+        //leaves
+    GLuint VAO2, VBO2;
+    glGenVertexArrays(1,&VAO2);
+    glGenBuffers(1, &VBO2);
+
+    glBindVertexArray(VAO2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(leaf_vertices), leaf_vertices, GL_STATIC_DRAW);
+
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // // Color attribute
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    // glEnableVertexAttribArray(1);
+    // TexCoord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // Unbind VAO
+
+
     //texture code
     GLuint texture1;
     // GLuint texture2;
@@ -403,7 +446,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Load, create texture and generate mipmaps
     int width, height;
-    unsigned char* image = SOIL_load_image("textures/bark.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image("textures/bark2.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     // unsigned char* image = SOIL_load_image("textures/frog.jpg", &width, &height, 0, SOIL_LOAD_RGB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -448,43 +491,51 @@ int main()
         (&objs[kk])->children.push_back(&objs[kk+1]);
     }
     
-    object* branchnode = &objs[10];
-    int offset = objs.size();
-    int branch1_objs = 20;
-    for(int kk=0; kk<branch1_objs; kk++){
-        // object obj(offset+kk);
-        object obj(0);
-        if(kk==0) {
-            obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
-            obj.translateR = vec3(0.3f, 0.3f, 0.0f);
-            obj.rAxisR = vec3(0.5f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians(-45.0f);
-        }
-        else {
-            obj.scaleR = scaleglob;
-            obj.translateR = vec3(0.0f, 0.9f, 0.0f);
-            obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
-            obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
-            //obj.rAngleR = glm::radians(-25.0f);
-        }
-        cout << "here0" << endl;
-        objs.push_back(obj);
-        cout << "here1: " << objs.size() << endl;
-        // branchnode->children.push_back(&objs[objs.size()-1]);    
-        // cout << "here2" << endl;
-        // cout<<kk<<" branchnode "<<branchnode->children.size()<<endl;
-        // if(branchnode->children.size() > 0){
-        //     cout << "aaaaaaaaa: " << branchnode->objid << ", " << branchnode->children[0]->objid << endl; 
-        // }
-        // branchnode = &objs[objs.size()-1];
-        // cout << "here3: " << endl;
-    }
-    (&objs[10])->children.push_back(&objs[offset]);
-    for(int kk=0; kk<branch1_objs-1; kk++){
-        (&objs[offset + kk])->children.push_back(&objs[offset + kk+1]);
-    }
-    addBranch(&objs[15], 25, vec3(0.3f, 0.2f, 0.0f), vec3(0.2f, 0.2f, 0.5f), glm::radians(-30.0f), 0.3f);
-    addBranch(&objs[50], 16, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.0f, 1.0f), glm::radians(45.0f), 0.5f);
+    // object* branchnode = &objs[10];
+    // int offset = objs.size();
+    // int branch1_objs = 20;
+    // for(int kk=0; kk<branch1_objs; kk++){
+    //     // object obj(offset+kk);
+    //     object obj(0);
+    //     if(kk==0) {
+    //         obj.scaleR = vec3(scaleglob.x * 0.5f, scaleglob.y, scaleglob.z*0.5f);
+    //         obj.translateR = vec3(0.3f, 0.3f, 0.0f);
+    //         obj.rAxisR = vec3(0.5f, 0.0f, 1.0f);
+    //         obj.rAngleR = glm::radians(-45.0f);
+    //     }
+    //     else {
+    //         obj.scaleR = scaleglob;
+    //         obj.translateR = vec3(0.0f, 0.9f, 0.0f);
+    //         obj.rAxisR = vec3(0.0f, 0.0f, 1.0f);
+    //         obj.rAngleR = glm::radians((12.0f * (float(rand())/float(RAND_MAX))) - 6.0f);
+    //         //obj.rAngleR = glm::radians(-25.0f);
+    //     }
+    //     cout << "here0" << endl;
+    //     objs.push_back(obj);
+    //     cout << "here1: " << objs.size() << endl;
+    //     // branchnode->children.push_back(&objs[objs.size()-1]);    
+    //     // cout << "here2" << endl;
+    //     // cout<<kk<<" branchnode "<<branchnode->children.size()<<endl;
+    //     // if(branchnode->children.size() > 0){
+    //     //     cout << "aaaaaaaaa: " << branchnode->objid << ", " << branchnode->children[0]->objid << endl; 
+    //     // }
+    //     // branchnode = &objs[objs.size()-1];
+    //     // cout << "here3: " << endl;
+    // }
+    // (&objs[10])->children.push_back(&objs[offset]);
+    // for(int kk=0; kk<branch1_objs-1; kk++){
+    //     (&objs[offset + kk])->children.push_back(&objs[offset + kk+1]);
+    // }
+    addBranch(&objs[10], 20, vec3(0.3f, 0.3f, 0.0f), vec3(0.5f, 0.0f, 1.0f), glm::radians(-45.0f), 0.5f,1);
+    addBranch(&objs[15], 25, vec3(0.3f, 0.2f, 0.0f), vec3(0.2f, 0.2f, 0.5f), glm::radians(-30.0f), 0.3f,1);
+    addBranch(&objs[60], 15, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.0f, 1.0f), glm::radians(25.0f), 0.5f,1);
+    addBranch(&objs[65], 20, vec3(-0.2f, 0.1f, 0.0f), vec3(0.3f, 0.3f, 1.0f), glm::radians(60.0f), 0.5f,1);
+    addBranch(&objs[90], 10, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.1f, 1.0f), glm::radians(30.0f), 0.5f,1);
+    addBranch(&objs[95], 15, vec3(-0.2f, 0.1f, 0.1f), vec3(0.3f, 0.2f, 1.0f), glm::radians(50.0f), 0.5f,1);
+    addBranch(&objs[40], 15, vec3(-0.2f, 0.1f, 0.1f), vec3(0.3f, 0.2f, 1.0f), glm::radians(50.0f), 0.5f,1);
+    addBranch(&objs[45], 15, vec3(-0.2f, 0.1f, 0.1f), vec3(0.3f, 0.2f, 1.0f), glm::radians(50.0f), 0.5f,1);
+    addBranch(&objs[100], 15, vec3(-0.2f, 0.1f, 0.1f), vec3(0.3f, 0.2f, 1.0f), glm::radians(50.0f), 0.5f,1);
+    addBranch(&objs[105], 15, vec3(-0.2f, 0.1f, 0.1f), vec3(0.3f, 0.2f, 1.0f), glm::radians(50.0f), 0.5f,1);
     //addBranch(&objs[90], 10, vec3(-0.1f, 0.3f, 0.0f), vec3(0.3f, 0.0f, 1.0f), glm::radians(100.0f), 0.3f);
 
   //   object* branchnode2 = &objs[50];
@@ -516,7 +567,7 @@ int main()
   //       //if(branchnode2->children) cout<<"null bc"<<endl;
   //   }
     
-    addBranch(&objs[20], 20, vec3(-0.1f, 0.3f, 0.0f), vec3(0.4f, 0.3f, 1.0f), glm::radians(45.0f), 0.5f);
+    addBranch(&objs[20], 20, vec3(-0.1f, 0.3f, 0.0f), vec3(0.4f, 0.3f, 1.0f), glm::radians(45.0f), 0.5f,0);
     // object* branchnode3 = &objs[20];
     // for(int kk=0; kk<20; kk++){
     //     object obj(0);
@@ -593,9 +644,12 @@ int main()
 
         // Get matrix's uniform location and set matrix
         glBindVertexArray(VAO);
-    	glm::mat4 transform;
-    	mvp = projection*view*transform;
+        glm::mat4 transform;
+        mvp = projection*view*transform;
         objs[0].draw(0);
+        glBindVertexArray(0);
+        glBindVertexArray(VAO2);
+        objs[0].draw(1);
    //      glm::mat4 mvp2 = mvp;
    //      for(int kk=0; kk<5; kk++){
    //          glUniformMatrix4fv(mvp_loc
